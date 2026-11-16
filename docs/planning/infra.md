@@ -1,0 +1,73 @@
+# 기술 스택과 인프라
+
+> Source: Deep Interview, 2026-11-16
+
+## Key Points (확정)
+
+- **백엔드: Spring Boot 유지** (PR #4의 뼈대: Java 25, Spring Boot 4.1)
+- **DB: Supabase 무료 티어 PostgreSQL**
+- **서버: 이미 운영 중인 AWS 서버에 함께 배포**한다. 새 서버 비용은 생기지 않는다.
+- **콜드 스타트는 허용하지 않는다.** 링크를 누른 친구가 바로 화면을 봐야 한다. 기존 AWS 서버가 상시 실행 중이므로 이 조건을 충족한다.
+
+## 비용 관점
+
+- 신규 고정비: 없음 (기존 서버 + Supabase 무료 티어)
+- 비용 위험: Supabase 무료 한도 초과, 기존 서버 자원 부족, 데이터 전송량
+- 이미지: 포켓몬 이미지를 직접 호스팅하지 않으면 이미지 트래픽 비용이 생기지 않는다 (ip-asset-policy.md의 "이미지 제공 방식"과 연결)
+
+## Supabase 무료 티어 조사 (2026-11-16 기준)
+
+공식 가격 페이지는 직접 열어 보지 않았다. 한도 수치는 제3자 블로그들이 공통으로 언급한 값이므로, 프로젝트를 만들 때 [supabase.com/pricing](https://supabase.com/pricing)에서 다시 확인한다. 연결 방식은 Supabase 공식 문서 기준이다.
+
+| 항목 | 내용 | 이 서비스에 미치는 영향 |
+|---|---|---|
+| DB 용량 | 프로젝트당 500 MB | 메시지 1건을 약 2 KB(500자 UTF-8과 부가 데이터)로 잡으면 수십만 건 규모라 여유가 있다고 보인다 (추정) |
+| 일시 중지 | **활동이 1주일 없으면 자동 일시 중지** | 출시 전 개발 공백기나 12/25 이후 트래픽이 줄어드는 시기에 서비스가 멈출 수 있다 → 대응 필요 |
+| 백업 | **무료 티어는 자동 백업이 없다** | 직접 `pg_dump` 백업을 해야 한다 |
+| 데이터 전송량 | 월 5 GB (출처에 따라 10 GB) | 이미지를 DB나 Storage에서 내려주지 않으면 영향이 적다 |
+| 프로젝트 수 | 계정당 활성 프로젝트 2개 | |
+| 직접 연결 | **IPv6 전용** (IPv4 전용 주소는 Pro 플랜 유료 애드온) | AWS 서버가 IPv4만 쓴다면 직접 연결할 수 없다 |
+| Session pooler | IPv4 지원, 포트 5432 | **Spring과 Flyway는 이것을 사용한다** |
+| Transaction pooler | 포트 6543 | Hibernate의 prepared statement, Flyway의 세션 잠금과 맞지 않는다 → 사용하지 않는다 |
+
+출처: [Supabase 연결 문서](https://supabase.com/docs/guides/database/connecting-to-postgres), [IPv4/IPv6 호환성](https://supabase.com/docs/guides/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP), [Spring Boot 퀵스타트](https://supabase.com/docs/guides/getting-started/quickstarts/spring-boot), [Pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits), [JetAdmin 가격 가이드](https://www.jetadmin.io/blog/supabase-pricing-2026-guide-to-plans-limits-and-real-world-costs/), [DEV: 2026 무료 티어 한도](https://dev.to/mahdi_benrhouma_fe1c6005/supabase-free-tier-limits-in-2026-what-you-actually-get-and-when-you-will-hit-them-4mhe)
+
+## 이 결정에서 나오는 요구사항 (제안)
+
+| # | 요구사항 |
+|---|---|
+| IN-1 | Supabase 프로젝트 리전을 AWS 서버와 같은 리전으로 만든다 (지연 시간 최소화) |
+| IN-2 | `DB_URL`을 Session pooler(5432)로 설정하고, Hikari 커넥션 풀은 작게 잡는다 (공유 pooler의 연결 수 제한 고려) |
+| IN-3 | **일시 중지 방지:** 매일 DB를 조회하는 예약 작업을 둔다. 다만 어떤 요청을 "활동"으로 보는지는 Supabase 기준을 확인해야 한다 |
+| IN-4 | **자체 백업:** 하루 1회 `pg_dump`를 AWS 서버나 다른 저장소에 보관한다. 종료할 때 백업도 함께 삭제한다 (PV-4) |
+| IN-5 | 로컬 개발은 지금처럼 Docker Compose의 PostgreSQL을 쓰고, 운영만 Supabase를 쓴다 |
+
+## 기존 AWS 서버 (확정 정보)
+
+- **EC2, 서울 리전(ap-northeast-2), 메모리 여유가 빠듯함**
+- → Supabase 프로젝트도 서울 리전에 만든다 (IN-1)
+- → JVM 메모리를 제한해야 한다: 최대 힙(`-Xmx`)을 작게 잡고 컨테이너 메모리 한도를 설정한다. 정확한 값은 서버의 실제 여유 메모리(`free -h`)를 확인한 뒤 정한다
+- → 필요하면 스왑을 설정해 메모리 부족으로 프로세스가 죽는 것을 막는다
+
+## 프론트엔드 배포 위치 (사용자 요청으로 추천)
+
+**[추천] 같은 EC2 서버에서 정적 파일로 제공한다.** (확정 전)
+
+| 기준 | 같은 EC2 (추천) | Cloudflare Pages / Netlify 등 |
+|---|---|---|
+| 도메인·쿠키 | FE와 `/api`가 한 도메인이라 OAuth 로그인 쿠키, CORS 설정이 가장 단순하다 | 도메인이 다르면 CORS 설정이 필요하고, Safari 등은 다른 사이트의 쿠키를 막는다. 같은 상위 도메인의 서브도메인으로 맞춰야 한다 |
+| 메모리 | 정적 파일 제공은 리버스 프록시가 맡으므로 추가 메모리가 거의 들지 않는다 | EC2 부담이 없다 |
+| 비용 | 번들이 작아(현재 빌드 기준 JS 약 100 KB gzip) 전송량 부담이 작다. 다만 AWS의 데이터 전송 요금 체계는 확인이 필요하다 | 무료 티어 범위 안에서 0원. 각 서비스의 무료 한도는 확인이 필요하다 |
+| 배포 | 백엔드와 함께 한 번에 배포한다 | 별도 배포 파이프라인이 생긴다 |
+| 장애 | EC2가 죽으면 FE도 함께 죽는다 (어차피 API 없이는 동작하지 않는다) | FE는 살아 있어도 API가 없으면 쓸 수 없다 |
+
+**추천 이유:** 혼자 15일 안에 만들어야 하므로 설정할 곳이 적은 쪽이 낫다. 백엔드가 죽으면 서비스 전체가 쓸 수 없어서, FE만 분리해 얻는 가용성 이점도 작다.
+
+## Open Questions
+
+- EC2에 이미 있는 리버스 프록시(Nginx, Caddy 등)와 실제 여유 메모리
+- 프론트엔드 배포 위치 최종 확정 (추천안 확인 필요)
+- **도메인: 미정.** OAuth 콜백 URL과 공유 링크에 필요하므로 앱 등록 전(늦어도 11월 하순)에 정해야 한다. 서비스 이름과 함께 결정한다
+- HTTPS 인증서 (Let's Encrypt 등)
+- 배포 방식 (Docker + GitHub Actions 등)
+- Supabase 무료 티어의 제한 사항 → 조사 중
