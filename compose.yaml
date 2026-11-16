@@ -1,0 +1,23 @@
+# 로컬 개발용 인프라. 실행: docker compose up -d
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: poke-letter-postgres
+    environment:
+      POSTGRES_DB: pokeletter
+      POSTGRES_USER: pokeletter
+      POSTGRES_PASSWORD: pokeletter
+      TZ: UTC
+    ports:
+      # 다른 로컬 PostgreSQL과 겹치지 않도록 호스트 포트는 5433 (POSTGRES_PORT로 변경 가능)
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pokeletter -d pokeletter"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:
