@@ -154,8 +154,8 @@ GROUP BY character_id ORDER BY first_received;
 | `V1__create_users_trees_characters_messages.sql` | 위 4개 테이블, 제약, 인덱스 |
 | (시드) `scripts/seed-characters` | PokéAPI → characters. 배포 환경에서 1회 실행, 다시 실행해도 같은 결과(idempotent) |
 
-## 용량 추정 (가정 기반)
+## 용량 추정
 
 - 메시지 1행 ≈ 최대 2 KB (내용 500자 × 한글 UTF-8 3바이트 + 나머지 컬럼과 인덱스)
-- 트리당 최대 500개(A-08) → 트리 하나에 최대 약 1 MB
-- Supabase 무료 500 MB 기준으로 꽉 찬 트리 수백 개 분량이다. 실제로는 대부분 트리가 훨씬 적게 받을 것으로 보지만, **사용자 수는 추정 근거가 없다**
+- 트리당 최대 200개(A-08) → 트리 하나에 최대 약 0.4 MB
+- Supabase 무료 500 MB 기준으로 꽉 찬 트리 약 1,200개 분량이다. 실제로는 대부분 트리가 훨씬 적게 받을 것으로 보지만, **사용자 수는 추정 근거가 없다**

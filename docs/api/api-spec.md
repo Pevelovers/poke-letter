@@ -111,7 +111,7 @@ Spring Security가 제공하는 경로를 그대로 쓴다. JSON API가 아니�
 
 ### `GET /trees/{treeId}` — 트리 보기 (누구나)
 
-쿼리: `page` (0부터, 기본 0), 페이지당 20개 (A-04)
+쿼리: `page` (0부터, 기본 0), 페이지당 10개 (A-04)
 
 ```json
 {
@@ -123,7 +123,7 @@ Spring Security가 제공하는 경로를 그대로 쓴다. JSON API가 아니�
   "decorations": [
     { "messageId": 101, "nickname": "피카츄친구", "decorationStyle": 3, "createdAt": "2026-12-02T21:14:00+09:00" }
   ],
-  "page": { "number": 0, "size": 20, "totalPages": 2 }
+  "page": { "number": 0, "size": 10, "totalPages": 3 }
 }
 ```
 - **공개 여부와 상관없이 내용과 포켓몬은 이 응답에 없다** (POL-RVL-01, 03)
@@ -155,6 +155,7 @@ Spring Security가 제공하는 경로를 그대로 쓴다. JSON API가 아니�
 - 검증: `nickname` 1~10자, `content` 1~500자, `random=false`면 `characterId` 필수, `random=true`면 `characterId`는 무시 (POL-MSG-01, 02)
 - 저장 전에 닉네임과 내용을 마스킹한다. 응답에는 마스킹된 닉네임을 돌려준다 (POL-FLT-01~03)
 - Rate Limit 초과 `429`, 트리 메시지 수 초과 `409 TREE_FULL`
+- FE는 `429`를 받으면 `Retry-After`로 남은 시간을 보여 주고, 임시 저장을 지우지 않는다 (POL-MSG-05)
 
 ### `GET /trees/{treeId}/messages` — 메시지 열어 보기 (트리 주인)
 

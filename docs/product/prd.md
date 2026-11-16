@@ -2,7 +2,7 @@
 
 > 버전 0.1 · 2026-11-16 · 작성: Claude Code (기획 인터뷰 기반) · 상태: **초안 (검토 필요)**
 > 근거 문서: [docs/planning/](../planning/_summary.md)
-> 표기: **[가정]** = 아직 사용자가 확정하지 않은 값. 확정되면 이 표기를 지운다.
+> 표기: **[가정]** = 아직 사용자가 확정하지 않은 값. 정책 가정 A-01~A-15는 2026-11-16에 확정했다.
 
 ## 1. 개요
 
@@ -127,4 +127,4 @@
 
 ## 11. 미결정 사항
 
-[docs/planning/_open-questions.md](../planning/_open-questions.md) 참고. 이 PRD 세트에서 **[가정]**으로 채워 둔 값은 [policies.md의 "가정 목록"](policies.md#가정-목록)에 모았다.
+[docs/planning/_open-questions.md](../planning/_open-questions.md) 참고. 정책 가정 값(A-01~A-15)의 확정 내역은 [policies.md의 "가정 목록"](policies.md#가정-목록)에 있다.
