@@ -1,1 +1,75 @@
 # poke-letter
+
+React + Spring Boot 모노레포입니다. 협업 규칙은 [AGENTS.md](AGENTS.md)를 따릅니다.
+
+## 기술 스택
+
+| 영역 | 스택 |
+|---|---|
+| Frontend | Vite 8, React 19 (+ React Compiler), TypeScript 7, TanStack Router/Query, Zustand, React Hook Form + Zod, Tailwind CSS v4 + shadcn/ui, Vitest, Playwright, oxlint, Prettier |
+| Backend | Java 25, Spring Boot 4.1, Spring Security 7, Spring Data JPA, Flyway, springdoc-openapi, Testcontainers |
+| Infra | PostgreSQL 18 (Docker Compose), GitHub Actions |
+
+## 사전 준비
+
+- **Node.js 24** (`.nvmrc`) — `nvm use` 또는 `fnm use`
+- **pnpm** — `corepack enable` (버전은 `frontend/package.json`의 `packageManager`로 고정)
+- **JDK** — 없어도 됩니다. Gradle이 JDK 25를 자동으로 내려받습니다
+- **Docker Desktop** — 로컬 DB와 백엔드 테스트(Testcontainers)에 필요합니다
+
+## 실행
+
+```bash
+# 1. 로컬 DB (호스트 포트 5433)
+docker compose up -d
+
+# 2. 백엔드 → http://localhost:8080
+cd backend
+./gradlew bootRun          # Windows: gradlew.bat bootRun
+
+# 3. 프론트엔드 → http://localhost:5173  (/api 요청은 8080으로 프록시)
+cd frontend
+pnpm install
+pnpm dev
+```
+
+- API 문서(Swagger UI): http://localhost:8080/swagger-ui.html
+- 헬스 체크: http://localhost:8080/actuator/health
+
+## 주요 명령
+
+| 위치 | 명령 | 설명 |
+|---|---|---|
+| frontend | `pnpm lint` / `pnpm typecheck` | 린트 / 타입 체크 |
+| frontend | `pnpm format` | Prettier 포맷 |
+| frontend | `pnpm test` | 단위 테스트 (Vitest) |
+| frontend | `pnpm test:e2e` | E2E 테스트 (최초 1회 `pnpm exec playwright install chromium`) |
+| frontend | `pnpm api:generate` | 백엔드 OpenAPI 명세로 API 타입·Query 훅 생성 (백엔드 실행 필요) |
+| backend | `./gradlew build` | 컴파일 + 테스트 |
+| backend | `./gradlew test` | 테스트만 |
+
+## 구조
+
+```
+poke-letter/
+├── frontend/
+│   └── src/
+│       ├── routes/          # TanStack Router 파일 기반 라우트 (routeTree.gen.ts 자동 생성)
+│       ├── pages/           # 화면 컴포넌트
+│       ├── components/ui/   # shadcn/ui 컴포넌트 (pnpm dlx shadcn@latest add <name>)
+│       ├── api/generated/   # orval 생성 코드 (직접 수정 금지)
+│       └── lib/
+├── backend/
+│   └── src/main/
+│       ├── java/com/pokeletter/
+│       └── resources/
+│           ├── application.yml
+│           └── db/migration/   # Flyway 마이그레이션 (V1__설명.sql)
+├── compose.yaml
+└── .github/
+```
+
+## 기획 단계에서 결정할 것
+
+- 인증 방식 (세션 / JWT / 소셜 로그인) — 현재 `SecurityConfig`는 헬스 체크·API 문서만 공개하고 나머지는 차단
+- 배포 대상

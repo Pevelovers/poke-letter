@@ -29,6 +29,24 @@ poke-letter/
 | 문서 | `docs/**`, `*.md` | `docs` |
 | 저장소 전체 설정 | 루트 설정 파일 | `repo` |
 
+### 기술 스택과 코드 규칙
+
+스택과 실행 방법은 [README.md](README.md)에 있습니다. 코드를 쓸 때 다음을 지킵니다.
+
+- **FE**
+  - 패키지 매니저는 `pnpm`만 사용합니다 (`npm`, `yarn` 금지).
+  - 라우트는 `src/routes/`에 파일로 추가합니다. `src/routeTree.gen.ts`는 자동 생성 파일이므로 직접 수정하지 않습니다.
+  - 서버 데이터는 TanStack Query로 다루고, Zustand에는 클라이언트 전용 상태만 둡니다.
+  - API 타입과 훅은 `pnpm api:generate`로 생성합니다. `src/api/generated/`는 직접 수정하지 않습니다.
+  - UI 컴포넌트는 `pnpm dlx shadcn@latest add <name>`으로 추가합니다.
+  - React Compiler를 사용하므로 `useMemo`/`useCallback`은 필요한 경우에만 씁니다.
+  - import 경로는 `@/` 별칭을 사용합니다.
+- **BE**
+  - DB 스키마는 Flyway 마이그레이션(`src/main/resources/db/migration/V<번호>__<설명>.sql`)으로만 변경합니다. `ddl-auto`는 `validate`로 유지합니다.
+  - 이미 `main`에 병합된 마이그레이션 파일은 수정하지 않고, 새 버전 파일을 추가합니다.
+  - 비밀 정보는 `application.yml`에 직접 쓰지 않고 환경 변수(`${DB_PASSWORD}` 등)로 주입합니다.
+  - API 컨트롤러에는 springdoc 어노테이션으로 명세를 남깁니다. 이 명세가 FE 타입 생성의 원본입니다.
+
 ---
 
 ## 1. 브랜치 전략
@@ -243,8 +261,8 @@ AI 에이전트는 위 규칙에 더해 다음을 지킵니다.
 
 - 작업 시작 전 연결된 이슈의 완료 조건을 읽고, **그 범위 안에서만** 수정합니다.
 - 커밋 전 해당 영역의 린트·타입 체크·테스트를 실행하고 통과를 확인합니다.
-  - FE: `frontend/`에서 린트, 타입 체크(`tsc --noEmit`), 테스트
-  - BE: `backend/`에서 `./gradlew build` (또는 `./gradlew test`)
+  - FE: `frontend/`에서 `pnpm lint && pnpm typecheck && pnpm format:check && pnpm test`
+  - BE: `backend/`에서 `./gradlew build` (Testcontainers 사용 → Docker 실행 필요)
 - 테스트가 실패하거나 실행하지 못했다면 PR 본문에 그 사실과 출력을 그대로 적습니다.
 - PR 본문의 "AI 사용" 항목에 사용한 에이전트와 사람이 직접 검토한 범위를 적습니다.
 - 새 의존성 추가, DB 스키마 변경, API 계약 변경, 인증/보안 관련 변경은 진행 전에 사람에게 확인합니다.
