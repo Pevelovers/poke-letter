@@ -1,0 +1,26 @@
+# macOS/Windows 혼용 환경에서 줄바꿈을 LF로 통일한다
+* text=auto eol=lf
+
+# Windows 전용 스크립트는 CRLF 유지
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# 바이너리
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+
+# 생성 파일: diff 접기, 언어 통계 제외
+frontend/pnpm-lock.yaml linguist-generated=true -diff
+frontend/src/routeTree.gen.ts linguist-generated=true
+frontend/src/api/generated/** linguist-generated=true
