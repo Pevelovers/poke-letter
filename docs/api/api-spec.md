@@ -120,6 +120,7 @@ Spring Security가 제공하는 경로를 그대로 쓴다. JSON API가 아니�
   "isOwner": false,
   "revealed": false,
   "messageCount": 23,
+  "full": false,
   "decorations": [
     { "messageId": 101, "nickname": "피카츄친구", "decorationStyle": 3, "createdAt": "2026-12-02T21:14:00+09:00" }
   ],
@@ -128,6 +129,20 @@ Spring Security가 제공하는 경로를 그대로 쓴다. JSON API가 아니�
 ```
 - **공개 여부와 상관없이 내용과 포켓몬은 이 응답에 없다** (POL-RVL-01, 03)
 - `isOwner`: 로그인한 주인이면 `true` → FE가 삭제·개봉 버튼을 보여 준다
+- `full`: 메시지가 최대치(200개)면 `true` → FE가 "메시지 남기기" 버튼을 숨긴다 (F-TRE-09)
+
+### `GET /t/{treeId}` — 공유 링크 HTML (누구나, `/api` 밖)
+
+JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘기고, 백엔드는 FE의 `index.html`에 트리별 Open Graph 메타 태그를 채워 돌려준다 (F-TRE-08). 그 뒤 화면은 SPA가 그린다.
+
+```html
+<meta property="og:title" content="지우의 트리에 메시지를 남겨 주세요">
+<meta property="og:description" content="Pokéletter · 12월 25일에 열려요">
+<meta property="og:image" content="https://<도메인>/og/default.png">
+```
+- 트리 이름은 HTML 이스케이프해서 넣는다 (XSS 방지)
+- 없는 트리면 공통 메타 태그로 돌려주고 화면에서 "트리를 찾을 수 없어요"를 보여 준다
+- `og:image`는 [가정 아님, 제안] 공통 이미지 1장으로 시작한다. 트리별 이미지 생성은 하지 않는다
 
 ## 4. 메시지
 
@@ -252,7 +267,7 @@ Spring Security가 제공하는 경로를 그대로 쓴다. JSON API가 아니�
 
 ## 보안 구현 메모
 
-- `SecurityConfig`: `/api/v1/config`, `GET /api/v1/trees/*`, `POST /api/v1/trees/*/messages`, `GET /api/v1/characters`, OAuth 경로, 헬스 체크만 `permitAll`. 나머지는 인증 필요
+- `SecurityConfig`: `/api/v1/config`, `GET /api/v1/trees/*`, `POST /api/v1/trees/*/messages`, `GET /api/v1/characters`, `GET /t/*`, OAuth 경로, 헬스 체크만 `permitAll`. 나머지는 인증 필요
 - 트리 주인 확인은 컨트롤러가 아니라 서비스 계층에서 `tree.owner_id == 로그인 사용자`로 한다
 - 공개 여부 확인(`now >= revealAt`)도 서비스 계층에서 하고, 테스트에서 시각을 바꿀 수 있도록 `Clock`을 주입한다
 - 현재 `SecurityConfig`는 CSRF를 끈 상태다(개발 환경 세팅 시점). 세션 쿠키 인증을 도입할 때 CSRF를 켜고, 익명 메시지 작성 경로만 예외로 둔다
