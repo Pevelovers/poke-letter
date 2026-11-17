@@ -40,6 +40,9 @@ erDiagram
         int dex_no
         varchar form "base | alola | galar | hisui | paldea"
         varchar name_ko
+        smallint generation "1~9, 폼 기준"
+        varchar type1
+        varchar type2 "nullable"
         varchar image_url
         int sort_order
         boolean active
@@ -98,6 +101,9 @@ erDiagram
 | form | `varchar(10)` | NOT NULL, default `base` | `base`, `alola`, `galar`, `hisui`, `paldea` (POL-CHR-01) |
 | name_ko | `varchar(50)` | NOT NULL | 표기 규칙 POL-CHR-06 |
 | image_url | `varchar(500)` | NOT NULL | 외부 스프라이트 URL (A-09) |
+| generation | `smallint` | NOT NULL, CHECK 1~9 | 폼이 처음 나온 세대 (POL-CHR-07). 알로라 라이츄 = 7 |
+| type1 | `varchar(10)` | NOT NULL | 첫 번째 타입. PokéAPI 영문 이름 (`electric` 등) |
+| type2 | `varchar(10)` | NULL | 두 번째 타입. 단일 타입이면 NULL |
 | sort_order | `integer` | NOT NULL | 선택기 정렬 (도감 번호 → 폼) |
 | active | `boolean` | NOT NULL, default `true` | 선택기에 노출할지 |
 
@@ -152,7 +158,7 @@ GROUP BY character_id ORDER BY first_received;
 | 파일 | 내용 |
 |---|---|
 | `V1__create_users_trees_characters_messages.sql` | 위 4개 테이블, 제약, 인덱스 |
-| (시드) `scripts/seed-characters` | PokéAPI → characters. 배포 환경에서 1회 실행, 다시 실행해도 같은 결과(idempotent) |
+| (시드) `scripts/seed-characters` | PokéAPI → characters. 배포 환경에서 1회 실행, 다시 실행해도 같은 결과(idempotent). 세대는 `pokemon-form` → `version_group` → `generation`, 타입은 `pokemon.types`에서 받는다 (POL-CHR-07) |
 
 ## 용량 추정
 

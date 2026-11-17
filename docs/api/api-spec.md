@@ -230,14 +230,17 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 {
   "pack": "pokemon",
   "characters": [
-    { "characterId": 25, "dexNo": 25, "form": "base", "name": "피카츄", "imageUrl": "https://..." },
-    { "characterId": 1038, "dexNo": 38, "form": "alola", "name": "알로라 나인테일", "imageUrl": "https://..." }
+    { "characterId": 25, "dexNo": 25, "form": "base", "name": "피카츄", "generation": 1, "types": ["electric"], "imageUrl": "https://..." },
+    { "characterId": 1026, "dexNo": 26, "form": "alola", "name": "알로라 라이츄", "generation": 7, "types": ["electric", "psychic"], "imageUrl": "https://..." }
   ]
 }
 ```
 - `Cache-Control: public, max-age=86400` + `ETag`. 목록이 거의 바뀌지 않는다
 - 활성 팩이 `ornament`면 오너먼트 N종을 같은 형식으로 돌려준다 (POL-IP-02)
 - 예시의 `characterId` 값은 설명용이다. 실제 값은 시드 스크립트가 정한다
+- `generation`: 폼이 처음 나온 세대 1~9 (POL-CHR-07)
+- `types`: 1~2개, PokéAPI 영문 타입 이름. 한국어 표기 18종은 FE가 고정 매핑으로 가진다. 세대·타입 필터는 FE에서 처리한다 (POL-CHR-08)
+- 활성 팩이 `ornament`면 `generation`, `types`는 `null`이고 FE는 필터를 숨긴다
 
 ### `GET /trees/{treeId}/collection` — 받은 포켓몬 모아보기 (트리 주인) · P1
 
