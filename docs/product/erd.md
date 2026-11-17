@@ -67,7 +67,7 @@ erDiagram
 | id | `bigint` | PK, identity | 내부용. URL에 노출하지 않음 |
 | public_id | `varchar(10)` | NOT NULL, UNIQUE | 공유 링크 ID (POL-TRE-03, A-03) |
 | owner_id | `bigint` | NOT NULL, UNIQUE, FK → users.id ON DELETE CASCADE | UNIQUE로 1인 1트리 보장 (POL-TRE-01) |
-| name | `varchar(20)` | NOT NULL | 마스킹 후 저장 (POL-FLT-01) |
+| name | `varchar(20)` | NOT NULL | 필터를 통과한 이름만 저장 (POL-FLT-06) |
 | created_at | `timestamptz` | NOT NULL, default `now()` | |
 
 ### messages — 메시지 (장식)

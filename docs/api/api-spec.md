@@ -22,6 +22,7 @@
 | HTTP | code | 상황 |
 |---|---|---|
 | 400 | `INVALID_INPUT` | 길이, 필수값 등 검증 실패. `fields`에 필드별 사유를 넣는다 |
+| 400 | `INAPPROPRIATE_NAME` | 트리 이름에 욕설·음담패설이 있음. 감지된 단어는 응답에 넣지 않는다 (POL-FLT-06) |
 | 401 | `UNAUTHORIZED` | 로그인 필요 |
 | 403 | `FORBIDDEN` | 내 트리가 아님, CSRF 실패 |
 | 403 | `NOT_REVEALED` | 공개 시각 전에 내용을 요청함 |
@@ -117,7 +118,7 @@ OAuth 앱에 등록할 Redirect URI (운영 + 로컬):
 ```json
 { "treeId": "aB3dE5fG7h", "name": "지우의 트리", "shareUrl": "https://pokeletter.duckdns.org/t/aB3dE5fG7h" }
 ```
-- `name`: 1~20자, 욕설 마스킹 후 저장 (POL-TRE-02, POL-FLT-01)
+- `name`: 1~20자. 욕설·음담패설이 있으면 마스킹하지 않고 `400 INAPPROPRIATE_NAME`으로 거절한다 (POL-TRE-02, POL-FLT-06)
 - 이미 트리가 있으면 `409 TREE_ALREADY_EXISTS`
 
 ### `GET /trees/{treeId}` — 트리 보기 (누구나)
