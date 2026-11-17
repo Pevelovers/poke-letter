@@ -22,6 +22,7 @@
 | HTTP | code | 상황 |
 |---|---|---|
 | 400 | `INVALID_INPUT` | 길이, 필수값 등 검증 실패. `fields`에 필드별 사유를 넣는다 |
+| 422 | `INAPPROPRIATE_CONTENT` | 메시지 닉네임·내용에 욕설·음담패설이 있고 `allowMasking=false`. 저장하지 않는다. `fields`에 칸 이름만 넣고 감지된 단어는 넣지 않는다 (POL-FLT-07) |
 | 400 | `INAPPROPRIATE_NAME` | 트리 이름에 욕설·음담패설이 있음. 감지된 단어는 응답에 넣지 않는다 (POL-FLT-06) |
 | 401 | `UNAUTHORIZED` | 로그인 필요 |
 | 403 | `FORBIDDEN` | 내 트리가 아님, CSRF 실패 |
@@ -162,11 +163,11 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 
 요청 (직접 고름)
 ```json
-{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": 25, "random": false }
+{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": 25, "random": false, "allowMasking": false }
 ```
 요청 (랜덤)
 ```json
-{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": null, "random": true }
+{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": null, "random": true, "allowMasking": false }
 ```
 응답 `201 Created`
 ```json
@@ -180,7 +181,13 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 ```
 - 랜덤이면 `"selectionType": "RANDOM"`, `"character": null` (POL-CHR-04)
 - 검증: `nickname` 1~10자, `content` 1~500자, `random=false`면 `characterId` 필수, `random=true`면 `characterId`는 무시 (POL-MSG-01, 02)
+- `allowMasking` (기본 `true`): 필터에 걸렸을 때 마스킹해서 저장해도 되는지 (POL-FLT-07)
+  - `false`: 걸리면 저장하지 않고 `422 INAPPROPRIATE_CONTENT` (`fields: ["content"]` 등). 걸리지 않으면 그대로 저장
+  - `true`: 걸려도 마스킹해서 저장한다
+  - FE 흐름: 첫 전송은 `false` → `422`면 보낸 닉네임·내용을 메모리에 기억 → 같은 내용이면 요청 없이 막음 → 바뀌었으면 `true`로 전송
+  - 기본값이 `true`라 F-MSG-04(P1)를 구현하기 전의 FE는 이 필드 없이 보내면 지금처럼 바로 마스킹 저장된다
 - 저장 전에 닉네임과 내용을 마스킹한다. 응답에는 마스킹된 닉네임을 돌려준다 (POL-FLT-01~03)
+- `422` 거부도 Rate Limit 횟수에 포함한다 (POL-FLT-07)
 - Rate Limit 초과 `429`, 트리 메시지 수 초과 `409 TREE_FULL`
 - FE는 `429`를 받으면 `Retry-After`로 남은 시간을 보여 주고, 임시 저장을 지우지 않는다 (POL-MSG-05)
 
