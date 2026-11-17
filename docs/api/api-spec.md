@@ -6,7 +6,7 @@
 
 ## 공통
 
-- **Base URL:** `https://<도메인>/api/v1` (FE와 같은 도메인, 로컬은 Vite 프록시)
+- **Base URL:** `https://pokeletter.duckdns.org/api/v1` (FE와 같은 도메인, 로컬은 Vite 프록시)
 - **형식:** JSON, UTF-8, 필드는 camelCase
 - **시각:** ISO-8601, 오프셋 포함 (`2026-12-25T00:00:00+09:00`)
 - **인증:** OAuth 로그인 후 세션 쿠키 (`HttpOnly`, `Secure`, `SameSite=Lax`)
@@ -73,6 +73,17 @@ Spring Security가 제공하는 경로를 그대로 쓴다. JSON API가 아니�
 | `GET /oauth2/authorization/{provider}` | 로그인 시작. `provider` = `google` \| `kakao` \| `naver` |
 | `GET /login/oauth2/code/{provider}` | 제공자 콜백 (OAuth 앱 등록 시 Redirect URI) → 성공하면 `/me`로 이동 |
 
+OAuth 앱에 등록할 Redirect URI (운영 + 로컬):
+
+| 제공자 | 운영 | 로컬 |
+|---|---|---|
+| 구글 | `https://pokeletter.duckdns.org/login/oauth2/code/google` | `http://localhost:8080/login/oauth2/code/google` |
+| 카카오 | `https://pokeletter.duckdns.org/login/oauth2/code/kakao` | `http://localhost:8080/login/oauth2/code/kakao` |
+| 네이버 | `https://pokeletter.duckdns.org/login/oauth2/code/naver` | `http://localhost:8080/login/oauth2/code/naver` |
+
+- 로컬 포트는 Spring 기본값(8080) 기준이다. FE를 Vite 프록시로 띄울 때 콜백을 어느 포트로 받을지는 구현할 때 맞춘다
+- 운영 서버는 리버스 프록시 뒤에 있으므로 Spring이 `X-Forwarded-*` 헤더로 `https://pokeletter.duckdns.org` 주소를 만들게 한다 (`server.forward-headers-strategy`)
+
 > 위 두 경로는 `/api/v1` 아래가 아니다. 리버스 프록시에서 함께 백엔드로 넘겨야 한다.
 
 ### `GET /me` — 내 정보 (로그인)
@@ -104,7 +115,7 @@ Spring Security가 제공하는 경로를 그대로 쓴다. JSON API가 아니�
 ```
 응답 `201 Created`
 ```json
-{ "treeId": "aB3dE5fG7h", "name": "지우의 트리", "shareUrl": "https://<도메인>/t/aB3dE5fG7h" }
+{ "treeId": "aB3dE5fG7h", "name": "지우의 트리", "shareUrl": "https://pokeletter.duckdns.org/t/aB3dE5fG7h" }
 ```
 - `name`: 1~20자, 욕설 마스킹 후 저장 (POL-TRE-02, POL-FLT-01)
 - 이미 트리가 있으면 `409 TREE_ALREADY_EXISTS`
@@ -138,7 +149,7 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 ```html
 <meta property="og:title" content="지우의 트리에 메시지를 남겨 주세요">
 <meta property="og:description" content="Pokéletter · 12월 25일에 열려요">
-<meta property="og:image" content="https://<도메인>/og/default.png">
+<meta property="og:image" content="https://pokeletter.duckdns.org/og/default.png">
 ```
 - 트리 이름은 HTML 이스케이프해서 넣는다 (XSS 방지)
 - 없는 트리면 공통 메타 태그로 돌려주고 화면에서 "트리를 찾을 수 없어요"를 보여 준다
