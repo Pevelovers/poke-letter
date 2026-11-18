@@ -17,20 +17,43 @@
 
 ## Supabase 무료 티어 조사 (2026-11-16 기준)
 
-공식 가격 페이지는 직접 열어 보지 않았다. 한도 수치는 제3자 블로그들이 공통으로 언급한 값이므로, 프로젝트를 만들 때 [supabase.com/pricing](https://supabase.com/pricing)에서 다시 확인한다. 연결 방식은 Supabase 공식 문서 기준이다.
+**DB 용량, 데이터 전송량, 컴퓨트는 2026-11-18에 [공식 가격 페이지](https://supabase.com/pricing)의 Free 플랜 항목으로 확인했다.** 일시 중지·백업·프로젝트 수는 가격 페이지 요약에 없어 아직 제3자 출처 값이다. 연결 방식은 Supabase 공식 문서 기준이다.
 
 | 항목 | 내용 | 이 서비스에 미치는 영향 |
 |---|---|---|
-| DB 용량 | 프로젝트당 500 MB | 메시지 1건을 약 2 KB(500자 UTF-8과 부가 데이터)로 잡으면 수십만 건 규모라 여유가 있다고 보인다 (추정) |
-| 일시 중지 | **활동이 1주일 없으면 자동 일시 중지** | 출시 전 개발 공백기나 12/25 이후 트래픽이 줄어드는 시기에 서비스가 멈출 수 있다 → 대응 필요 |
+| DB 용량 | **500 MB** (공식 확인) | 메시지 1건을 약 2 KB(500자 UTF-8과 부가 데이터)로 잡으면 수십만 건 규모라 여유가 있다고 보인다 (추정) |
+| 일시 중지 | **활동이 1주일 없으면 자동 일시 중지** (제3자 출처, 공식 문서 확인 필요) | 출시 전 개발 공백기나 12/25 이후 트래픽이 줄어드는 시기에 서비스가 멈출 수 있다 → 대응 필요 |
 | 백업 | **무료 티어는 자동 백업이 없다** | 직접 `pg_dump` 백업을 해야 한다 |
-| 데이터 전송량 | 월 5 GB (출처에 따라 10 GB) | 이미지를 DB나 Storage에서 내려주지 않으면 영향이 적다 |
+| 데이터 전송량 | **월 5 GB** + 캐시된 전송량 5 GB (공식 확인) | DB에서 우리 서버로 가는 조회 결과도 전송량에 포함된다고 보고, 트리 조회처럼 자주 부르는 쿼리는 필요한 컬럼만 가져온다. 이미지를 DB나 Storage에서 내려주지 않으므로 큰 부담은 없을 것으로 본다 (추정) |
+| 컴퓨트 | 공유 CPU, **RAM 500 MB** (공식 확인) | 동시 연결과 무거운 쿼리에 약하다. Hikari 커넥션 풀을 작게 잡는다 (IN-2) |
 | 프로젝트 수 | 계정당 활성 프로젝트 2개 | |
 | 직접 연결 | **IPv6 전용** (IPv4 전용 주소는 Pro 플랜 유료 애드온) | AWS 서버가 IPv4만 쓴다면 직접 연결할 수 없다 |
 | Session pooler | IPv4 지원, 포트 5432 | **Spring과 Flyway는 이것을 사용한다** |
 | Transaction pooler | 포트 6543 | Hibernate의 prepared statement, Flyway의 세션 잠금과 맞지 않는다 → 사용하지 않는다 |
 
 출처: [Supabase 연결 문서](https://supabase.com/docs/guides/database/connecting-to-postgres), [IPv4/IPv6 호환성](https://supabase.com/docs/guides/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP), [Spring Boot 퀵스타트](https://supabase.com/docs/guides/getting-started/quickstarts/spring-boot), [Pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits), [JetAdmin 가격 가이드](https://www.jetadmin.io/blog/supabase-pricing-2026-guide-to-plans-limits-and-real-world-costs/), [DEV: 2026 무료 티어 한도](https://dev.to/mahdi_benrhouma_fe1c6005/supabase-free-tier-limits-in-2026-what-you-actually-get-and-when-you-will-hit-them-4mhe)
+
+## Supabase 프로젝트 설정 (2026-11-18 생성)
+
+| 항목 | 설정 | 이유 |
+|---|---|---|
+| 계정 | 운영자 GitHub 계정으로 로그인, Organization `Pevelovers` (Free) | 일시 중지 경고 메일을 평소 쓰는 메일로 받는다 |
+| 프로젝트 이름 | `poke-letter` | |
+| 리전 | **Northeast Asia (Seoul)** `ap-northeast-2` | EC2와 같은 리전 (IN-1) |
+| 연결 | **Session pooler** (IPv4, 포트 5432) | Direct는 IPv6 전용, Transaction pooler는 Flyway·Hibernate와 맞지 않는다 |
+| GitHub 연동 | **안 함** | 스키마는 Flyway로만 바꾼다. 저장소 권한도 주지 않는다 |
+| Data API | **끔** | 켜 두면 공개 키로 테이블을 직접 읽을 수 있어, 12/25 전 공개 금지(POL-RVL-01)를 우회하는 통로가 생긴다. 서버는 JDBC로 연결하므로 필요 없다 |
+| 새 테이블 API 자동 권한 | **끔** | 위와 같은 이유 |
+| 새 테이블 RLS 자동 적용 | **켬** | Data API가 다시 켜져도 막히도록 한 이중 잠금. 서버는 테이블 소유자로 접속하므로 영향이 없다 |
+| Agent Skills | 설치 안 함 | supabase-js를 쓰지 않는다 |
+
+환경 변수 (값은 비밀번호 관리자에만 둔다):
+```
+DB_URL=jdbc:postgresql://aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres?sslmode=require
+DB_USERNAME=postgres.<프로젝트 ID>
+DB_PASSWORD=<생성한 비밀번호>
+```
+비밀번호는 `DB_PASSWORD`로 따로 넣으므로 URL용 퍼센트 인코딩은 필요 없다.
 
 ## 이 결정에서 나오는 요구사항 (제안)
 
