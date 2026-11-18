@@ -38,6 +38,9 @@ pnpm dev
 - 헬스 체크: http://localhost:8080/actuator/health
 - `dev` 프로필은 `backend/.env`를 읽고, 세션 쿠키의 `Secure`를 끄고, 개발용 로그인(`POST /dev/login`)을 연다. 운영에서는 쓰지 않는다
 - 개인 설정은 커밋되지 않는 `application-local.yml`에 두고 `--spring.profiles.active=dev,local`로 함께 켠다
+- **`.env`는 앱마다 따로 둔다** (`backend/.env`, `frontend/.env`). 루트에 하나로 합치지 않는다
+  - **FE에는 비밀 값을 넣지 않는다.** Vite는 `VITE_`로 시작하는 변수를 브라우저 번들에 그대로 넣으므로 누구나 볼 수 있다. OAuth 시크릿 같은 값은 `backend/.env`에만 둔다
+  - 각 `.env`는 커밋하지 않고, 키 이름은 `.env.example`에 견본으로 남긴다
 
 ## 주요 명령
 
