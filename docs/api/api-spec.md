@@ -1,6 +1,6 @@
 # API 명세
 
-> 버전 0.1 · 2026-11-16 · 상태: **초안 (검토 필요)**
+> 버전 1.0 · 2026-11-18 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
 > 근거: [기능 정의서](../product/features.md), [정책 정의서](../product/policies.md), [ERD](../product/erd.md)
 > 구현 후에는 springdoc이 만드는 OpenAPI(`/v3/api-docs`)가 단일 출처가 되고, FE 타입은 `pnpm api:generate`로 생성한다. 이 문서는 구현 전 합의용 계약이다.
 
