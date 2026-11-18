@@ -10,6 +10,7 @@ erDiagram
     users ||--o| trees : "owns (1인 1트리)"
     trees ||--o{ messages : "receives"
     characters ||--o{ messages : "gifted as"
+    balls ||--o{ messages : "decorated with"
 
     users {
         bigint id PK
@@ -31,18 +32,26 @@ erDiagram
         varchar content "1~500자, 마스킹 후"
         int character_id FK
         varchar selection_type "CHOSEN | RANDOM"
-        smallint decoration_style
+        int ball_id FK
         timestamptz created_at
     }
     characters {
         int id PK
         varchar pack "pokemon"
         int dex_no
-        varchar form "base | alola | galar | hisui | paldea"
+        varchar form "base | alola | galar | hisui | paldea(-접미사)"
         varchar name_ko
         smallint generation "1~9, 폼 기준"
         varchar type1
         varchar type2 "nullable"
+        varchar image_url
+        int sort_order
+        boolean active
+    }
+    balls {
+        int id PK "PokéAPI 아이템 id"
+        varchar item_key UK "poke-ball 등"
+        varchar name_ko
         varchar image_url
         int sort_order
         boolean active
@@ -83,7 +92,7 @@ erDiagram
 | content | `varchar(500)` | NOT NULL | 마스킹 후, 일반 텍스트 (POL-MSG-01, 07) |
 | character_id | `integer` | NOT NULL, FK → characters.id | 포켓몬 팩의 행을 가리킨다 (POL-CHR-02) |
 | selection_type | `varchar(10)` | NOT NULL, CHECK (`CHOSEN`,`RANDOM`) | 작성자 화면 표시에 쓴다 (POL-CHR-04) |
-| decoration_style | `smallint` | NOT NULL | 장식 모양 번호. 서버가 작성 시 무작위로 정한다. 범위는 디자인 확정 후 결정 |
+| ball_id | `integer` | NOT NULL, FK → balls.id | 장식으로 달리는 볼. **작성자가 고른다** (기본값 몬스터볼). 12/25 전에도 트리에 보인다 |
 | created_at | `timestamptz` | NOT NULL, default `now()` | 장식 배치 순서 (POL-TRE-04) |
 
 - INDEX (`tree_id`, `created_at`) — 트리 화면 조회와 페이지 넘김
@@ -95,11 +104,11 @@ erDiagram
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
-| id | `integer` | PK | 시드 스크립트가 정한다. 한 번 정하면 바꾸지 않는다 (메시지가 참조) |
+| id | `integer` | PK | **`도감 번호 × 100 + 폼 번호`** (피카츄 2500, 알로라 라이츄 2601). 시드 스크립트가 이 규칙으로 정하므로 다시 시드해도 바뀌지 않는다 (메시지가 참조) |
 | pack | `varchar(20)` | NOT NULL | 현재 `pokemon`만 있음 |
 | dex_no | `integer` | NOT NULL | 전국도감 번호 |
-| form | `varchar(10)` | NOT NULL, default `base` | `base`, `alola`, `galar`, `hisui`, `paldea` (POL-CHR-01) |
-| name_ko | `varchar(50)` | NOT NULL | 표기 규칙 POL-CHR-06 |
+| form | `varchar(20)` | NOT NULL, default `base` | `base`, `alola`, `galar`, `hisui`, `paldea` (POL-CHR-01). 한 지역에 폼이 여럿이면 접미사로 구분한다: 팔데아 켄타로스 `paldea-combat`, `paldea-blaze`, `paldea-aqua` |
+| name_ko | `varchar(50)` | NOT NULL | 화면 이름. **리전폼도 원래 이름 그대로** (알로라 라이츄 → `라이츄`, 팔데아 켄타로스 3종 → `켄타로스`). 구분은 `form`으로만 한다 (POL-CHR-06) |
 | image_url | `varchar(500)` | NOT NULL | 외부 스프라이트 URL (A-09) |
 | generation | `smallint` | NOT NULL, CHECK 1~9 | 폼이 처음 나온 세대 (POL-CHR-07). 알로라 라이츄 = 7 |
 | type1 | `varchar(10)` | NOT NULL | 첫 번째 타입. PokéAPI 영문 이름 (`electric` 등) |
@@ -109,6 +118,20 @@ erDiagram
 
 - UNIQUE (`pack`, `dex_no`, `form`)
 - 데이터는 Flyway가 아니라 **시드 스크립트**로 넣는다. 저장소에 포켓몬 데이터 파일을 커밋하지 않기 위해서다 (POL-IP-04, A-10)
+
+### balls — 장식용 볼
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | `integer` | PK | **PokéAPI 아이템 id** 그대로. 다시 시드해도 바뀌지 않는다 (메시지가 참조) |
+| item_key | `varchar(30)` | NOT NULL, UNIQUE | PokéAPI 아이템 이름 (`poke-ball`, `lapoke-ball` 등) |
+| name_ko | `varchar(30)` | NOT NULL | 화면 이름. 일반 볼과 이름이 겹치는 히스이 볼 4종은 `몬스터볼(히스이)`, `슈퍼볼(히스이)`, `하이퍼볼(히스이)`, `헤비볼(히스이)` |
+| image_url | `varchar(500)` | NOT NULL | 외부 아이템 스프라이트 URL (POL-IP-03) |
+| sort_order | `integer` | NOT NULL | 볼 선택기 정렬 |
+| active | `boolean` | NOT NULL, default `true` | 선택기에 노출할지 |
+
+- PokéAPI `item-pocket/pokeballs`의 38종 전체 (일반, 특수, 구 볼, 히스이). 2026-11-18 기준 모두 한국어 이름과 스프라이트가 있다
+- 데이터는 characters와 같은 시드 스크립트로 넣는다
 
 ## 저장하지 않는 것
 
@@ -133,6 +156,7 @@ erDiagram
 
 - 응답을 만드는 서버의 한 곳(`CharacterPresenter` 등)에서만 이 규칙을 적용한다. FE는 응답에 들어 있는 이름과 이미지 URL만 쓴다
 - 대체 팩일 때는 포켓몬 선택기를 끄고, 오너먼트 N종 중에서 고르게 한다 → 이때 선택값은 해당 오너먼트에 대응하는 대표 `characters.id`로 저장한다 (세부 사항은 구현 시 확정)
+- **볼도 공식 디자인이므로 함께 바꾼다.** 대체 팩일 때 장식은 일반 크리스마스 볼 M종으로 보여 준다: `장식 번호 = balls.id % M`, 이미지는 FE 에셋. 볼 선택기도 M종 중에서 고르게 하고, 선택값은 대응하는 대표 `balls.id`로 저장한다
 
 ## 주요 쿼리
 
@@ -157,8 +181,8 @@ GROUP BY character_id ORDER BY first_received;
 
 | 파일 | 내용 |
 |---|---|
-| `V1__create_users_trees_characters_messages.sql` | 위 4개 테이블, 제약, 인덱스 |
-| (시드) `scripts/seed-characters` | PokéAPI → characters. 배포 환경에서 1회 실행, 다시 실행해도 같은 결과(idempotent). 세대는 `pokemon-form` → `version_group` → `generation`, 타입은 `pokemon.types`에서 받는다 (POL-CHR-07) |
+| `V1__create_users_trees_characters_messages.sql` | 위 5개 테이블(users, trees, characters, balls, messages), 제약, 인덱스 |
+| (시드) `scripts/seed-characters` | PokéAPI → characters, balls. 배포 환경에서 1회 실행, 다시 실행해도 같은 결과(idempotent). 세대는 `pokemon-form` → `version_group` → `generation`, 타입은 `pokemon.types`에서 받는다 (POL-CHR-07) |
 
 ## 용량 추정
 
