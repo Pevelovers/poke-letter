@@ -38,7 +38,7 @@ erDiagram
         int id PK
         varchar pack "pokemon"
         int dex_no
-        varchar form "base | alola | galar | hisui | paldea"
+        varchar form "base | alola | galar | hisui | paldea(-접미사)"
         varchar name_ko
         smallint generation "1~9, 폼 기준"
         varchar type1
@@ -83,7 +83,7 @@ erDiagram
 | content | `varchar(500)` | NOT NULL | 마스킹 후, 일반 텍스트 (POL-MSG-01, 07) |
 | character_id | `integer` | NOT NULL, FK → characters.id | 포켓몬 팩의 행을 가리킨다 (POL-CHR-02) |
 | selection_type | `varchar(10)` | NOT NULL, CHECK (`CHOSEN`,`RANDOM`) | 작성자 화면 표시에 쓴다 (POL-CHR-04) |
-| decoration_style | `smallint` | NOT NULL | 장식 모양 번호. 서버가 작성 시 무작위로 정한다. 범위는 디자인 확정 후 결정 |
+| decoration_style | `smallint` | NOT NULL, CHECK ≥ 0 | 장식 모양 번호. 서버가 작성 시 무작위로 정한다. 상한은 디자인 확정 후 V2에서 정한다 |
 | created_at | `timestamptz` | NOT NULL, default `now()` | 장식 배치 순서 (POL-TRE-04) |
 
 - INDEX (`tree_id`, `created_at`) — 트리 화면 조회와 페이지 넘김
@@ -95,10 +95,10 @@ erDiagram
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
-| id | `integer` | PK | 시드 스크립트가 정한다. 한 번 정하면 바꾸지 않는다 (메시지가 참조) |
+| id | `integer` | PK | **`도감 번호 × 100 + 폼 번호`** (피카츄 2500, 알로라 라이츄 2601). 시드 스크립트가 이 규칙으로 정하므로 다시 시드해도 바뀌지 않는다 (메시지가 참조) |
 | pack | `varchar(20)` | NOT NULL | 현재 `pokemon`만 있음 |
 | dex_no | `integer` | NOT NULL | 전국도감 번호 |
-| form | `varchar(10)` | NOT NULL, default `base` | `base`, `alola`, `galar`, `hisui`, `paldea` (POL-CHR-01) |
+| form | `varchar(20)` | NOT NULL, default `base` | `base`, `alola`, `galar`, `hisui`, `paldea` (POL-CHR-01). 한 지역에 폼이 여럿이면 접미사로 구분한다: 팔데아 켄타로스 `paldea-combat`, `paldea-blaze`, `paldea-aqua` |
 | name_ko | `varchar(50)` | NOT NULL | 표기 규칙 POL-CHR-06 |
 | image_url | `varchar(500)` | NOT NULL | 외부 스프라이트 URL (A-09) |
 | generation | `smallint` | NOT NULL, CHECK 1~9 | 폼이 처음 나온 세대 (POL-CHR-07). 알로라 라이츄 = 7 |
