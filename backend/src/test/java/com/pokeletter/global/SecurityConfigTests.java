@@ -1,6 +1,7 @@
 package com.pokeletter.global;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.pokeletter.TestcontainersConfiguration;
@@ -30,8 +31,10 @@ class SecurityConfigTests {
 	}
 
 	@Test
-	void 그_외_요청은_인증이_필요하다() throws Exception {
-		mockMvc.perform(get("/api/v1/anything")).andExpect(status().isForbidden());
+	void 그_외_요청은_인증이_필요하고_401_JSON으로_답한다() throws Exception {
+		mockMvc.perform(get("/api/v1/anything"))
+			.andExpect(status().isUnauthorized())
+			.andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
 	}
 
 }
