@@ -9,4 +9,6 @@ public interface TreeRepository extends JpaRepository<Tree, Long> {
 
 	boolean existsByOwnerId(Long ownerId);
 
+	Optional<Tree> findByOwnerId(Long ownerId);
+
 }
