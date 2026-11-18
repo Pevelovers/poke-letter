@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("local")
+@ActiveProfiles("dev")
 @Transactional
 class DevLoginTests {
 
@@ -27,7 +27,7 @@ class DevLoginTests {
 	MockMvc mockMvc;
 
 	@Test
-	void local_프로필에서는_개발용_로그인으로_세션이_생긴다() throws Exception {
+	void dev_프로필에서는_개발용_로그인으로_세션이_생긴다() throws Exception {
 		MockHttpSession session = (MockHttpSession) mockMvc
 			.perform(post("/dev/login").param("provider", "GOOGLE").param("id", "tester"))
 			.andExpect(status().isNoContent())

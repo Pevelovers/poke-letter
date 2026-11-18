@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * <strong>로컬 개발 전용</strong> 로그인. {@code local} 프로필에서만 만들어지며 운영에는 존재하지 않는다.
+ * <strong>개발 전용</strong> 로그인. {@code dev} 프로필에서만 만들어지며 운영에는 존재하지 않는다.
  *
  * <p>UI·기능을 확인할 때 실제 OAuth 없이 테스트 사용자로 로그인한다.
  *
@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  * </pre>
  */
 @Configuration
-@Profile("local")
+@Profile("dev")
 class DevLoginConfig {
 
 	/** 메인 보안 설정보다 먼저 {@code /dev/**}만 처리한다. */
