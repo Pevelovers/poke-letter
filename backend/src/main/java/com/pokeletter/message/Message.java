@@ -1,5 +1,6 @@
 package com.pokeletter.message;
 
+import com.pokeletter.ball.Ball;
 import com.pokeletter.character.PackCharacter;
 import com.pokeletter.tree.Tree;
 import jakarta.persistence.Column;
@@ -48,22 +49,23 @@ public class Message {
 	@Column(name = "selection_type", nullable = false, length = 10)
 	private SelectionType selectionType;
 
-	/** 장식 모양 번호. 서버가 작성 시 무작위로 정한다. 범위는 디자인 확정 후 정한다. */
-	@Column(name = "decoration_style", nullable = false)
-	private Short decorationStyle;
+	/** 장식으로 달리는 볼. 작성자가 고른다. 12/25 전에도 트리에 보인다. */
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "ball_id", nullable = false)
+	private Ball ball;
 
 	@CreationTimestamp
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
 	public Message(Tree tree, String nickname, String content, PackCharacter character,
-			SelectionType selectionType, Short decorationStyle) {
+			SelectionType selectionType, Ball ball) {
 		this.tree = tree;
 		this.nickname = nickname;
 		this.content = content;
 		this.character = character;
 		this.selectionType = selectionType;
-		this.decorationStyle = decorationStyle;
+		this.ball = ball;
 	}
 
 }

@@ -34,6 +34,7 @@ public class PackCharacter {
 	@Column(nullable = false, length = 20)
 	private String form;
 
+	/** 화면 이름. 리전폼도 원래 이름 그대로 쓴다 (알로라 라이츄 → 라이츄). 구분은 form으로만 한다. */
 	@Column(name = "name_ko", nullable = false, length = 50)
 	private String nameKo;
 

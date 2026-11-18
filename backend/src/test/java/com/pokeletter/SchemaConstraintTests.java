@@ -3,6 +3,8 @@ package com.pokeletter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.pokeletter.ball.Ball;
+import com.pokeletter.ball.BallRepository;
 import com.pokeletter.character.PackCharacter;
 import com.pokeletter.character.PackCharacterRepository;
 import com.pokeletter.message.Message;
@@ -14,6 +16,7 @@ import com.pokeletter.user.Provider;
 import com.pokeletter.user.User;
 import com.pokeletter.user.UserRepository;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,6 +38,9 @@ class SchemaConstraintTests {
 
 	@Autowired
 	PackCharacterRepository characterRepository;
+
+	@Autowired
+	BallRepository ballRepository;
 
 	@Autowired
 	MessageRepository messageRepository;
@@ -88,8 +94,9 @@ class SchemaConstraintTests {
 		User owner = userRepository.saveAndFlush(new User(Provider.KAKAO, "owner"));
 		Tree tree = treeRepository.saveAndFlush(new Tree("aB3dE5fG7h", owner, "지우의 트리"));
 		PackCharacter pikachu = characterRepository.saveAndFlush(pikachu());
+		Ball pokeBall = ballRepository.saveAndFlush(pokeBall());
 		messageRepository.saveAndFlush(
-				new Message(tree, "이슬", "메리 크리스마스!", pikachu, SelectionType.CHOSEN, (short) 0));
+				new Message(tree, "이슬", "메리 크리스마스!", pikachu, SelectionType.CHOSEN, pokeBall));
 		entityManager.clear();
 
 		// 탈퇴(POL-PRV-03)는 users 행 삭제 하나로 끝나야 한다. 나머지는 DB의 ON DELETE CASCADE가 지운다
@@ -100,6 +107,7 @@ class SchemaConstraintTests {
 		assertThat(treeRepository.count()).isZero();
 		assertThat(messageRepository.count()).isZero();
 		assertThat(characterRepository.count()).isEqualTo(1);
+		assertThat(ballRepository.count()).isEqualTo(1);
 	}
 
 	@Test
@@ -107,13 +115,29 @@ class SchemaConstraintTests {
 		Tree tree = treeRepository.saveAndFlush(
 				new Tree("aB3dE5fG7h", userRepository.saveAndFlush(new User(Provider.KAKAO, "o")), "트리"));
 		PackCharacter pikachu = characterRepository.saveAndFlush(pikachu());
+		Ball pokeBall = ballRepository.saveAndFlush(pokeBall());
 
 		messageRepository.saveAndFlush(
-				new Message(tree, "가나다라마바사아자차", "내용", pikachu, SelectionType.RANDOM, (short) 1));
+				new Message(tree, "가나다라마바사아자차", "내용", pikachu, SelectionType.RANDOM, pokeBall));
 
 		assertThatThrownBy(() -> messageRepository.saveAndFlush(
-				new Message(tree, "가나다라마바사아자차카", "내용", pikachu, SelectionType.RANDOM, (short) 1)))
+				new Message(tree, "가나다라마바사아자차카", "내용", pikachu, SelectionType.RANDOM, pokeBall)))
 			.isInstanceOf(DataIntegrityViolationException.class);
+	}
+
+	@Test
+	void 없는_볼로는_메시지를_저장할_수_없다() {
+		Tree tree = treeRepository.saveAndFlush(
+				new Tree("aB3dE5fG7h", userRepository.saveAndFlush(new User(Provider.KAKAO, "o")), "트리"));
+		PackCharacter pikachu = characterRepository.saveAndFlush(pikachu());
+
+		assertThatThrownBy(() -> entityManager
+			.createNativeQuery("INSERT INTO messages (tree_id, nickname, content, character_id, selection_type, ball_id)"
+					+ " VALUES (:tree, '이슬', '내용', :character, 'CHOSEN', 9999)")
+			.setParameter("tree", tree.getId())
+			.setParameter("character", pikachu.getId())
+			.executeUpdate())
+			.isInstanceOf(PersistenceException.class);
 	}
 
 	@Test
@@ -126,12 +150,14 @@ class SchemaConstraintTests {
 	}
 
 	@Test
-	void 한_지역에_폼이_여럿이면_접미사로_구분해_저장된다() {
-		characterRepository.saveAndFlush(tauros(12801, "paldea-combat", "팔데아 켄타로스 (컴뱃종)"));
-		characterRepository.saveAndFlush(tauros(12802, "paldea-blaze", "팔데아 켄타로스 (블레이즈종)"));
-		characterRepository.saveAndFlush(tauros(12803, "paldea-aqua", "팔데아 켄타로스 (워터종)"));
+	void 리전폼은_코드로만_구분하고_화면_이름은_원래_이름_그대로다() {
+		characterRepository.saveAndFlush(tauros(12800, "base"));
+		characterRepository.saveAndFlush(tauros(12801, "paldea-combat"));
+		characterRepository.saveAndFlush(tauros(12802, "paldea-blaze"));
+		characterRepository.saveAndFlush(tauros(12803, "paldea-aqua"));
 
-		assertThat(characterRepository.count()).isEqualTo(3);
+		assertThat(characterRepository.findAll()).hasSize(4)
+			.allSatisfy(tauros -> assertThat(tauros.getNameKo()).isEqualTo("켄타로스"));
 	}
 
 	@Test
@@ -141,14 +167,28 @@ class SchemaConstraintTests {
 			.isInstanceOf(DataIntegrityViolationException.class);
 	}
 
+	@Test
+	void 볼은_PokeAPI_아이템_이름으로_한_번만_저장되고_히스이_볼은_이름으로_구분한다() {
+		ballRepository.saveAndFlush(pokeBall());
+		ballRepository.saveAndFlush(new Ball(1785, "lapoke-ball", "몬스터볼(히스이)", "https://example.com/la.png", 2));
+
+		assertThatThrownBy(() -> ballRepository.saveAndFlush(
+				new Ball(9999, "poke-ball", "몬스터볼", "https://example.com/dup.png", 3)))
+			.isInstanceOf(DataIntegrityViolationException.class);
+	}
+
 	private static PackCharacter pikachu() {
 		return new PackCharacter(2500, "pokemon", 25, "base", "피카츄", "https://example.com/25.png", (short) 1,
 				"electric", null, 2500);
 	}
 
-	private static PackCharacter tauros(int id, String form, String name) {
-		return new PackCharacter(id, "pokemon", 128, form, name, "https://example.com/128.png", (short) 9,
+	private static PackCharacter tauros(int id, String form) {
+		return new PackCharacter(id, "pokemon", 128, form, "켄타로스", "https://example.com/128.png", (short) 9,
 				"fighting", null, id);
+	}
+
+	private static Ball pokeBall() {
+		return new Ball(4, "poke-ball", "몬스터볼", "https://example.com/poke-ball.png", 1);
 	}
 
 }
