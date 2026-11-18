@@ -27,7 +27,7 @@
 | 401 | `UNAUTHORIZED` | 로그인 필요 |
 | 403 | `FORBIDDEN` | 내 트리가 아님, CSRF 실패 |
 | 403 | `NOT_REVEALED` | 공개 시각 전에 내용을 요청함 |
-| 404 | `TREE_NOT_FOUND` / `MESSAGE_NOT_FOUND` / `CHARACTER_NOT_FOUND` | |
+| 404 | `TREE_NOT_FOUND` / `MESSAGE_NOT_FOUND` / `CHARACTER_NOT_FOUND` / `BALL_NOT_FOUND` | |
 | 409 | `TREE_ALREADY_EXISTS` | 이미 트리가 있음 (POL-TRE-01) |
 | 409 | `TREE_FULL` | 트리당 최대 메시지 수 초과 (POL-ABU-03) |
 | 429 | `TOO_MANY_REQUESTS` | Rate Limit 초과. `Retry-After` 헤더 포함 (POL-ABU-01) |
@@ -146,7 +146,7 @@ OAuth 앱 등록 결과 (2026-11-18)
   "messageCount": 23,
   "full": false,
   "decorations": [
-    { "messageId": 101, "nickname": "피카츄친구", "decorationStyle": 3, "createdAt": "2026-12-02T21:14:00+09:00" }
+    { "messageId": 101, "nickname": "피카츄친구", "ball": { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." }, "createdAt": "2026-12-02T21:14:00+09:00" }
   ],
   "page": { "number": 0, "size": 10, "totalPages": 3 }
 }
@@ -154,6 +154,7 @@ OAuth 앱 등록 결과 (2026-11-18)
 - **공개 여부와 상관없이 내용과 포켓몬은 이 응답에 없다** (POL-RVL-01, 03)
 - `isOwner`: 로그인한 주인이면 `true` → FE가 삭제·개봉 버튼을 보여 준다
 - `full`: 메시지가 최대치(200개)면 `true` → FE가 "메시지 남기기" 버튼을 숨긴다 (F-TRE-09)
+- `ball`: 장식으로 달린 볼. 작성자가 고른 것이라 공개 전에도 보여 준다 (POL-CHR-10). 대체 팩이면 일반 크리스마스 볼로 바꿔 돌려준다 (POL-IP-02)
 
 ### `GET /t/{treeId}` — 공유 링크 HTML (누구나, `/api` 밖)
 
@@ -174,24 +175,25 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 
 요청 (직접 고름)
 ```json
-{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": 25, "random": false, "allowMasking": false }
+{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": 25, "random": false, "ballId": 4, "allowMasking": false }
 ```
 요청 (랜덤)
 ```json
-{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": null, "random": true, "allowMasking": false }
+{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": null, "random": true, "ballId": 4, "allowMasking": false }
 ```
 응답 `201 Created`
 ```json
 {
   "messageId": 101,
   "nickname": "피카츄친구",
-  "decorationStyle": 3,
+  "ball": { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." },
   "selectionType": "CHOSEN",
   "character": { "characterId": 25, "name": "피카츄", "imageUrl": "https://..." }
 }
 ```
 - 랜덤이면 `"selectionType": "RANDOM"`, `"character": null` (POL-CHR-04)
 - 검증: `nickname` 1~10자, `content` 1~500자, `random=false`면 `characterId` 필수, `random=true`면 `characterId`는 무시 (POL-MSG-01, 02)
+- `ballId` 필수: 활성 볼이어야 한다. 없으면 `404 BALL_NOT_FOUND`. FE는 작성 폼을 열 때 몬스터볼을 미리 선택해 둔다 (POL-CHR-10). 랜덤 보내기여도 볼은 작성자가 고른다
 - `allowMasking` (기본 `true`): 필터에 걸렸을 때 마스킹해서 저장해도 되는지 (POL-FLT-07)
   - `false`: 걸리면 저장하지 않고 `422 INAPPROPRIATE_CONTENT` (`fields: ["content"]` 등). 걸리지 않으면 그대로 저장
   - `true`: 걸려도 마스킹해서 저장한다
@@ -217,7 +219,7 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
       "content": "메리 크리스마스!",
       "selectionType": "RANDOM",
       "character": { "characterId": 133, "name": "이브이", "imageUrl": "https://..." },
-      "decorationStyle": 3,
+      "ball": { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." },
       "createdAt": "2026-12-02T21:14:00+09:00"
     }
   ],
@@ -248,17 +250,37 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 {
   "pack": "pokemon",
   "characters": [
-    { "characterId": 25, "dexNo": 25, "form": "base", "name": "피카츄", "generation": 1, "types": ["electric"], "imageUrl": "https://..." },
-    { "characterId": 1026, "dexNo": 26, "form": "alola", "name": "알로라 라이츄", "generation": 7, "types": ["electric", "psychic"], "imageUrl": "https://..." }
+    { "characterId": 2500, "dexNo": 25, "form": "base", "name": "피카츄", "generation": 1, "types": ["electric"], "imageUrl": "https://..." },
+    { "characterId": 2600, "dexNo": 26, "form": "base", "name": "라이츄", "generation": 1, "types": ["electric"], "imageUrl": "https://..." },
+    { "characterId": 2601, "dexNo": 26, "form": "alola", "name": "라이츄", "generation": 7, "types": ["electric", "psychic"], "imageUrl": "https://..." }
   ]
 }
 ```
 - `Cache-Control: public, max-age=86400` + `ETag`. 목록이 거의 바뀌지 않는다
 - 활성 팩이 `ornament`면 오너먼트 N종을 같은 형식으로 돌려준다 (POL-IP-02)
-- 예시의 `characterId` 값은 설명용이다. 실제 값은 시드 스크립트가 정한다
+- `characterId` = 도감 번호 × 100 + 폼 번호 (ERD)
+- `name`: **리전폼도 원래 이름 그대로**다. 같은 이름이 둘 이상 나올 수 있고, 이미지와 `form`으로 구분한다 (POL-CHR-06)
 - `generation`: 폼이 처음 나온 세대 1~9 (POL-CHR-07)
 - `types`: 1~2개, PokéAPI 영문 타입 이름. 한국어 표기 18종은 FE가 고정 매핑으로 가진다. 세대·타입 필터는 FE에서 처리한다 (POL-CHR-08)
 - 활성 팩이 `ornament`면 `generation`, `types`는 `null`이고 FE는 필터를 숨긴다
+
+### `GET /balls` — 장식용 볼 목록 (누구나)
+
+볼 선택기와 트리 화면에서 쓴다. 38종.
+
+```json
+{
+  "pack": "pokemon",
+  "balls": [
+    { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." },
+    { "ballId": 1785, "name": "몬스터볼(히스이)", "imageUrl": "https://..." }
+  ]
+}
+```
+- `ballId` = PokéAPI 아이템 id. 예시의 히스이 볼 id는 설명용이다
+- `name`: 일반 볼과 이름이 겹치는 히스이 볼 4종만 `(히스이)`를 붙인다 (POL-CHR-10)
+- `Cache-Control: public, max-age=86400` + `ETag`
+- 활성 팩이 `ornament`면 일반 크리스마스 볼 M종을 같은 형식으로 돌려준다 (POL-IP-02)
 
 ### `GET /trees/{treeId}/collection` — 받은 포켓몬 모아보기 (트리 주인) · P1
 
@@ -295,12 +317,13 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 | `DELETE /trees/{id}/messages/{messageId}` | | | ✓ | |
 | `GET /trees/{id}/messages/export` | | | ✓ | ✓ |
 | `GET /characters` | ✓ | | | |
+| `GET /balls` | ✓ | | | |
 | `GET /trees/{id}/collection` | | | ✓ | ✓ |
 | `GET /actuator/health` (경로는 `/api` 밖) | ✓ | | | |
 
 ## 보안 구현 메모
 
-- `SecurityConfig`: `/api/v1/config`, `GET /api/v1/trees/*`, `POST /api/v1/trees/*/messages`, `GET /api/v1/characters`, `GET /t/*`, OAuth 경로, 헬스 체크만 `permitAll`. 나머지는 인증 필요
+- `SecurityConfig`: `/api/v1/config`, `GET /api/v1/trees/*`, `POST /api/v1/trees/*/messages`, `GET /api/v1/characters`, `GET /api/v1/balls`, `GET /t/*`, OAuth 경로, 헬스 체크만 `permitAll`. 나머지는 인증 필요
 - 트리 주인 확인은 컨트롤러가 아니라 서비스 계층에서 `tree.owner_id == 로그인 사용자`로 한다
 - 공개 여부 확인(`now >= revealAt`)도 서비스 계층에서 하고, 테스트에서 시각을 바꿀 수 있도록 `Clock`을 주입한다
 - 현재 `SecurityConfig`는 CSRF를 끈 상태다(개발 환경 세팅 시점). 세션 쿠키 인증을 도입할 때 CSRF를 켜고, 익명 메시지 작성 경로만 예외로 둔다
