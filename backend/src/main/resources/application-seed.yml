@@ -1,0 +1,10 @@
+# 시드 전용 프로필: PokéAPI → characters, balls. 웹 서버 없이 실행하고 끝낸다 (SeedRunner)
+spring:
+  main:
+    web-application-type: none
+
+pokeletter:
+  seed:
+    pokeapi-base-url: https://pokeapi.co/api/v2/
+    # PokéAPI 이용 정책을 지키기 위한 요청 간격
+    request-delay: 50ms
