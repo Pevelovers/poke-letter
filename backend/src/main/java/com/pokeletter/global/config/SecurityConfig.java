@@ -2,6 +2,7 @@ package com.pokeletter.global.config;
 
 import com.pokeletter.auth.AuthProperties;
 import com.pokeletter.auth.EnabledProvidersAuthorizationRequestResolver;
+import com.pokeletter.auth.LoggingAuthenticationFailureHandler;
 import com.pokeletter.auth.PokeLetterOAuth2UserService;
 import com.pokeletter.auth.PokeLetterOidcUserService;
 import com.pokeletter.global.error.JsonSecurityErrorHandler;
@@ -62,7 +63,7 @@ public class SecurityConfig {
 					.userService(oauth2UserService)
 					.oidcUserService(oidcUserService))
 				.defaultSuccessUrl(authProperties.successUrl(), true)
-				.failureUrl(authProperties.failureUrl()))
+				.failureHandler(new LoggingAuthenticationFailureHandler(authProperties.failureUrl())))
 			.logout(logout -> logout
 				.logoutUrl("/api/v1/auth/logout")
 				.logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))

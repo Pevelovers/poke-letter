@@ -53,6 +53,20 @@ class AuthFlowTests {
 	}
 
 	@Test
+	void 구글_로그인은_항상_계정_선택_화면을_보여_준다() throws Exception {
+		MvcResult result = mockMvc.perform(get("/oauth2/authorization/google")).andReturn();
+
+		assertThat(result.getResponse().getRedirectedUrl()).contains("prompt=select_account");
+	}
+
+	@Test
+	void 카카오_로그인도_항상_계정_선택_화면을_보여_준다() throws Exception {
+		MvcResult result = mockMvc.perform(get("/oauth2/authorization/kakao")).andReturn();
+
+		assertThat(result.getResponse().getRedirectedUrl()).contains("prompt=select_account");
+	}
+
+	@Test
 	void 카카오_로그인은_카카오_인가_주소로_이동한다() throws Exception {
 		MvcResult result = mockMvc.perform(get("/oauth2/authorization/kakao"))
 			.andExpect(status().is3xxRedirection())
@@ -67,6 +81,13 @@ class AuthFlowTests {
 	void 꺼진_제공자로는_로그인을_시작할_수_없다() throws Exception {
 		// 기본 설정에서 네이버는 꺼져 있다 (검수 후 켬, POL-ACC-02)
 		mockMvc.perform(get("/oauth2/authorization/naver"))
+			.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void 없는_제공자_이름은_서버_오류가_아니라_401이다() throws Exception {
+		// 주소를 복사하다 글자가 붙은 경우 (실제로 "google을"로 500이 났다)
+		mockMvc.perform(get("/oauth2/authorization/google을"))
 			.andExpect(status().isUnauthorized());
 	}
 
