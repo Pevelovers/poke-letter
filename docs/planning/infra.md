@@ -67,6 +67,26 @@ DB_PASSWORD=<생성한 비밀번호>
 | IN-4 | **자체 백업:** 하루 1회 `pg_dump`를 AWS 서버나 다른 저장소에 보관한다. 종료할 때 백업도 함께 삭제한다 (PV-4) |
 | IN-5 | 로컬 개발은 지금처럼 Docker Compose의 PostgreSQL을 쓰고, 운영만 Supabase를 쓴다 |
 
+## 보안: CVE-2026-114938 (Java4Shell)
+
+2026-11-17 오라클이 공개한 JVM 취약점 ([CVE.org](https://www.cve.org/CVERecord?id=CVE-2026-114938), [NVD](https://nvd.nist.gov/vuln/detail/CVE-2026-114938), CVSS 9.2/8.1). HotSpot의 x86-64 Base64 디코더 최적화(AVX-512 VBMI) 메모리 손상으로, 인증 전 원격 코드 실행이 가능하다. 2026-11-19 검토.
+
+| 공격 조건 | 이 프로젝트 | 판단 |
+|---|---|---|
+| JDK 17.0.6 이상, 21, 25, 27 (패치 전) | 툴체인 **Java 25**. 로컬은 Temurin 25.0.5 | 해당 |
+| x86-64 + **AVX-512 VBMI** CPU (ARM 영향 없음) | 로컬 Mac(i5-8257U)은 AVX-512 없음. **운영 서버 미확인** | 운영 서버 CPU에 달림 |
+| 인증 전에 공격자 입력을 Base64로 디코딩하는 경로 | HTTP Basic은 껐다. 그러나 Spring Security CSRF 처리기(`XorCsrfTokenRequestAttributeHandler`)가 `_csrf` 파라미터를 Base64로 디코딩하고, CSRF 검사는 로그인 전에도 돈다 | 경로 있음 |
+| 악성 서버로의 TLS 연결 (클라이언트 측) | 구글·카카오·네이버·PokéAPI·Supabase에만 연결 | 낮음 |
+
+| # | 대응 |
+|---|---|
+| IN-7 | 운영 JVM은 **패치된 JDK 25**로 실행한다. 2026-11-18 기준 패치: Oracle `25.0.5.1`, Amazon Corretto `25.0.5.1.2`. Temurin 패치는 미출시. 컨테이너 기본 이미지를 패치된 배포판으로 고르고 출시 전 버전을 다시 확인한다 |
+| IN-8 | 패치 JDK를 쓸 수 없으면 JVM 옵션 `-XX:-UseBASE64Intrinsics`로 취약한 최적화를 끈다. 이 서비스는 Base64를 거의 쓰지 않아 성능 영향이 없다. 실행 후 `jcmd <pid> VM.flags`로 적용을 확인한다 |
+| IN-9 | 서버 CPU(AVX-512 VBMI 여부)를 서버 정보 요청에서 확인한다. 같은 서버의 다른 Java 서비스도 영향을 받을 수 있어 지인에게 알린다 |
+
+- 로컬 개발 환경은 CPU 조건을 만족하지 않아 급하지 않다. Temurin 패치가 나오면 로컬 JDK도 갱신한다
+- 출처: 위 공식 기록, [Cyber Kendra 기사](https://www.cyberkendra.com/2026/11/cve-2026-114938-pre-auth-rce-flaw-in-java-17-puts-servers-at-risk.html) (영향 버전·CPU 조건·패치 버전)
+
 ## 기존 AWS 서버 (확정 정보)
 
 - **EC2, 서울 리전(ap-northeast-2), 메모리 여유가 빠듯함**
