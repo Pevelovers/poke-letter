@@ -25,7 +25,8 @@ docker compose up -d
 
 # 2. 백엔드 → http://localhost:8080
 cd backend
-./gradlew bootRun          # Windows: gradlew.bat bootRun
+cp .env.example .env   # 처음 한 번. OAuth 키를 채운다 (.env는 커밋되지 않음)
+./gradlew bootRun --args='--spring.profiles.active=dev'   # Windows: gradlew.bat bootRun --args=...
 
 # 3. 프론트엔드 → http://localhost:5173  (/api 요청은 8080으로 프록시)
 cd frontend
@@ -35,6 +36,8 @@ pnpm dev
 
 - API 문서(Swagger UI): http://localhost:8080/swagger-ui.html
 - 헬스 체크: http://localhost:8080/actuator/health
+- `dev` 프로필은 `backend/.env`를 읽고, 세션 쿠키의 `Secure`를 끄고, 개발용 로그인(`POST /dev/login`)을 연다. 운영에서는 쓰지 않는다
+- 개인 설정은 커밋되지 않는 `application-local.yml`에 두고 `--spring.profiles.active=dev,local`로 함께 켠다
 
 ## 주요 명령
 
