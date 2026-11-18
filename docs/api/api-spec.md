@@ -150,7 +150,7 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 
 ```html
 <meta property="og:title" content="지우의 트리에 메시지를 남겨 주세요">
-<meta property="og:description" content="Pokéletter · 12월 25일에 열려요">
+<meta property="og:description" content="PokéLetter · 12월 25일에 열려요">
 <meta property="og:image" content="https://pokeletter.duckdns.org/og/default.png">
 ```
 - 트리 이름은 HTML 이스케이프해서 넣는다 (XSS 방지)
