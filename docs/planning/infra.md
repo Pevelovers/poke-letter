@@ -67,6 +67,10 @@ DB_PASSWORD=<생성한 비밀번호>
 | IN-4 | **자체 백업:** 하루 1회 `pg_dump`를 AWS 서버나 다른 저장소에 보관한다. 종료할 때 백업도 함께 삭제한다 (PV-4) |
 | IN-5 | 로컬 개발은 지금처럼 Docker Compose의 PostgreSQL을 쓰고, 운영만 Supabase를 쓴다 |
 
+## 트래픽 대비 (2026-11-19)
+
+12/15에 실측으로 12/24~25 부하를 예측하고, 기준을 넘으면 **GCP 무료 크레딧**(신규 $300, 90일)으로 서버(Compute Engine VM)와 DB(Cloud SQL)를 옮긴다. 도메인이 IP만 가리키므로 DuckDNS A 레코드만 바꾸면 OAuth와 공유 링크가 그대로 동작한다. 세부: [트래픽 대비 계획](traffic-plan.md) (POL-OPS-06).
+
 ## 보안: CVE-2026-114938 (Java4Shell)
 
 2026-11-17 오라클이 공개한 JVM 취약점 ([CVE.org](https://www.cve.org/CVERecord?id=CVE-2026-114938), [NVD](https://nvd.nist.gov/vuln/detail/CVE-2026-114938), CVSS 9.2/8.1). HotSpot의 x86-64 Base64 디코더 최적화(AVX-512 VBMI) 메모리 손상으로, 인증 전 원격 코드 실행이 가능하다. 2026-11-19 검토.
