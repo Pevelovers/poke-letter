@@ -4,7 +4,7 @@
 
 ## 바로 정해야 함 (11/17까지, 외부 신청에 필요)
 
-- [x] **서비스 이름** — Pokéletter (포케레터), ASCII 전용 환경에서는 Pokeletter (2026-11-16 확정)
+- [x] **서비스 이름** — PokéLetter (포케레터), ASCII 전용 환경에서는 PokeLetter (2026-11-16 확정, 2026-11-18 대소문자 표기 통일)
 - [x] **도메인** — `pokeletter.duckdns.org` (DuckDNS 무료 서브도메인, 2026-11-17 확정). DuckDNS에서 이름을 실제로 등록했는지 확인한다. 이미 쓰고 있는 이름이면 `poke-letter`, `pokeletter-xmas` 순으로 대신 쓴다
 - [x] **권리자 연락 창구 이메일** (IP-5) — `pokeletter.contact@gmail.com` (서비스 전용 Gmail, 2026-11-18 확정). 자주 쓰는 메일로 자동 전달·라벨·휴대폰 알림을 설정한다
 
