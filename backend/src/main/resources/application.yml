@@ -3,7 +3,7 @@ spring:
     name: poke-letter
   # 기본값은 루트 compose.yaml의 로컬 DB와 맞춘다. 운영 값은 환경 변수로 주입한다.
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/pokeletter}
+    url: ${DB_URL:jdbc:mysql://localhost:3307/pokeletter}
     username: ${DB_USERNAME:pokeletter}
     password: ${DB_PASSWORD:pokeletter}
   jpa:
