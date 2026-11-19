@@ -1,23 +1,29 @@
 # 로컬 개발용 인프라. 실행: docker compose up -d
+# 운영 DB(배포 인프라의 MySQL)는 8.0.16 이상이어야 한다 (CHECK 제약). 로컬은 8.4 LTS로 맞춘다.
 services:
-  postgres:
-    image: postgres:18-alpine
-    container_name: poke-letter-postgres
+  mysql:
+    image: mysql:8.4
+    container_name: poke-letter-mysql
     environment:
-      POSTGRES_DB: pokeletter
-      POSTGRES_USER: pokeletter
-      POSTGRES_PASSWORD: pokeletter
+      MYSQL_DATABASE: pokeletter
+      MYSQL_USER: pokeletter
+      MYSQL_PASSWORD: pokeletter
+      MYSQL_ROOT_PASSWORD: pokeletter-root
       TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
     ports:
-      # 다른 로컬 PostgreSQL과 겹치지 않도록 호스트 포트는 5433 (POSTGRES_PORT로 변경 가능)
-      - "${POSTGRES_PORT:-5433}:5432"
+      # 다른 로컬 MySQL과 겹치지 않도록 호스트 포트는 3307 (MYSQL_PORT로 변경 가능)
+      - "${MYSQL_PORT:-3307}:3306"
     volumes:
-      - postgres-data:/var/lib/postgresql
+      - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pokeletter -d pokeletter"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u pokeletter -ppokeletter --silent"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
 
 volumes:
-  postgres-data:
+  mysql-data:

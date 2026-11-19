@@ -1,7 +1,7 @@
 # ERD
 
 > 버전 1.0 · 2026-11-18 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
-> 근거: [기능 정의서](features.md), [정책 정의서](policies.md) · DBMS: PostgreSQL 18 (운영 Supabase, 로컬 Docker)
+> 근거: [기능 정의서](features.md), [정책 정의서](policies.md) · DBMS: **MySQL 8.0.16 이상** (운영은 배포 인프라 제공, 로컬·테스트는 MySQL 8.4 LTS). 2026-11-19 PostgreSQL에서 전환 (#33)
 
 ## 다이어그램
 
@@ -16,14 +16,14 @@ erDiagram
         bigint id PK
         varchar provider "KAKAO | GOOGLE | NAVER"
         varchar provider_user_id
-        timestamptz created_at
+        datetime created_at "UTC"
     }
     trees {
         bigint id PK
         varchar public_id UK "공유 URL용 10자"
         bigint owner_id FK,UK
         varchar name "1~20자"
-        timestamptz created_at
+        datetime created_at "UTC"
     }
     messages {
         bigint id PK
@@ -33,7 +33,7 @@ erDiagram
         int character_id FK
         varchar selection_type "CHOSEN | RANDOM"
         int ball_id FK
-        timestamptz created_at
+        datetime created_at "UTC"
     }
     characters {
         int id PK
@@ -64,10 +64,10 @@ erDiagram
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
-| id | `bigint` | PK, identity | |
+| id | `bigint` | PK, AUTO_INCREMENT | |
 | provider | `varchar(10)` | NOT NULL, CHECK (`KAKAO`,`GOOGLE`,`NAVER`) | POL-ACC-04 |
-| provider_user_id | `varchar(255)` | NOT NULL | 제공자 고유 ID. 로그에 남기지 않음 (POL-PRV-05) |
-| created_at | `timestamptz` | NOT NULL, default `now()` | |
+| provider_user_id | `varchar(255)` | NOT NULL, **utf8mb4_bin** (대소문자 구분) | 제공자 고유 ID. 로그에 남기지 않음 (POL-PRV-05) |
+| created_at | `datetime(6)` | NOT NULL, default `CURRENT_TIMESTAMP(6)`, UTC | |
 
 - UNIQUE (`provider`, `provider_user_id`)
 - 이메일·이름 등은 컬럼 자체가 없다 (POL-PRV-01)
@@ -76,29 +76,31 @@ erDiagram
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
-| id | `bigint` | PK, identity | 내부용. URL에 노출하지 않음 |
-| public_id | `varchar(10)` | NOT NULL, UNIQUE | 공유 링크 ID (POL-TRE-03, A-03) |
+| id | `bigint` | PK, AUTO_INCREMENT | 내부용. URL에 노출하지 않음 |
+| public_id | `varchar(10)` | NOT NULL, UNIQUE, **utf8mb4_bin** (대소문자 구분) | 공유 링크 ID (POL-TRE-03, A-03) |
 | owner_id | `bigint` | NOT NULL, UNIQUE, FK → users.id ON DELETE CASCADE | UNIQUE로 1인 1트리 보장 (POL-TRE-01) |
 | name | `varchar(20)` | NOT NULL | 필터를 통과한 이름만 저장 (POL-FLT-06) |
-| created_at | `timestamptz` | NOT NULL, default `now()` | |
+| created_at | `datetime(6)` | NOT NULL, default `CURRENT_TIMESTAMP(6)`, UTC | |
 
 ### messages — 메시지 (장식)
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
-| id | `bigint` | PK, identity | |
+| id | `bigint` | PK, AUTO_INCREMENT | |
 | tree_id | `bigint` | NOT NULL, FK → trees.id ON DELETE CASCADE | 탈퇴 시 함께 삭제 (POL-PRV-03) |
 | nickname | `varchar(10)` | NOT NULL | 마스킹 후 (POL-MSG-02) |
 | content | `varchar(500)` | NOT NULL | 마스킹 후, 일반 텍스트 (POL-MSG-01, 07) |
 | character_id | `integer` | NOT NULL, FK → characters.id | 포켓몬 팩의 행을 가리킨다 (POL-CHR-02) |
 | selection_type | `varchar(10)` | NOT NULL, CHECK (`CHOSEN`,`RANDOM`) | 작성자 화면 표시에 쓴다 (POL-CHR-04) |
 | ball_id | `integer` | NOT NULL, FK → balls.id | 장식으로 달리는 볼. **작성자가 고른다** (기본값 몬스터볼). 12/25 전에도 트리에 보인다 |
-| created_at | `timestamptz` | NOT NULL, default `now()` | 장식 배치 순서 (POL-TRE-04) |
+| created_at | `datetime(6)` | NOT NULL, default `CURRENT_TIMESTAMP(6)`, UTC | 장식 배치 순서 (POL-TRE-04) |
 
 - INDEX (`tree_id`, `created_at`) — 트리 화면 조회와 페이지 넘김
 - INDEX (`tree_id`, `character_id`) — 랜덤 후보 계산과 모아보기 집계
 - 삭제는 행 삭제(hard delete)다 (POL-MSG-06)
-- PostgreSQL의 `varchar(n)`은 글자 수 기준이라 한글·이모지 길이 제한과 맞는다. 앱에서도 같은 기준으로 검증한다
+- MySQL `utf8mb4`의 `varchar(n)`은 글자 수 기준이라 한글·이모지 길이 제한과 맞는다. 앱에서도 같은 기준으로 검증한다
+- MySQL 기본 콜레이션(`utf8mb4_0900_ai_ci`)은 대소문자를 구분하지 않는다. 대소문자가 다른 값을 구분해야 하는 컬럼(공유 ID, 제공자 고유 ID, 볼 아이템 키)은 `utf8mb4_bin`으로 둔다
+- 길이 초과는 MySQL `STRICT` 모드에서만 오류가 난다(아니면 잘려서 저장). 운영 DB의 `sql_mode`와 상관없이 앱에서 먼저 검증한다
 
 ### characters — 캐릭터 팩 (포켓몬)
 
@@ -124,7 +126,7 @@ erDiagram
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
 | id | `integer` | PK | **PokéAPI 아이템 id** 그대로. 다시 시드해도 바뀌지 않는다 (메시지가 참조) |
-| item_key | `varchar(30)` | NOT NULL, UNIQUE | PokéAPI 아이템 이름 (`poke-ball`, `lapoke-ball` 등) |
+| item_key | `varchar(30)` | NOT NULL, UNIQUE, **utf8mb4_bin** | PokéAPI 아이템 이름 (`poke-ball`, `lapoke-ball` 등) |
 | name_ko | `varchar(30)` | NOT NULL | 화면 이름. 일반 볼과 이름이 겹치는 히스이 볼 4종은 `몬스터볼(히스이)`, `슈퍼볼(히스이)`, `하이퍼볼(히스이)`, `헤비볼(히스이)` |
 | image_url | `varchar(500)` | NOT NULL | 외부 아이템 스프라이트 URL (POL-IP-03) |
 | sort_order | `integer` | NOT NULL | 볼 선택기 정렬 |
@@ -165,7 +167,7 @@ erDiagram
 SELECT c.id FROM characters c
 WHERE c.pack = 'pokemon' AND c.active
   AND NOT EXISTS (SELECT 1 FROM messages m WHERE m.tree_id = :treeId AND m.character_id = c.id)
-ORDER BY random() LIMIT 1;
+ORDER BY RAND() LIMIT 1;
 -- 결과가 없으면 조건 없이 전체에서 다시 뽑는다
 
 -- 받은 포켓몬 모아보기 (POL-CHR-05)
@@ -174,7 +176,7 @@ FROM messages WHERE tree_id = :treeId
 GROUP BY character_id ORDER BY first_received;
 ```
 
-- 캐릭터가 약 1,100행이라 `ORDER BY random()`으로도 충분하다고 본다 (추정)
+- 캐릭터가 약 1,100행이라 `ORDER BY RAND()`로도 충분하다고 본다 (추정)
 - 동시에 랜덤을 두 번 보내면 같은 포켓몬이 나올 수 있다. 정책상 문제없다고 보고 잠금은 걸지 않는다
 
 ## 마이그레이션 계획
@@ -188,4 +190,4 @@ GROUP BY character_id ORDER BY first_received;
 
 - 메시지 1행 ≈ 최대 2 KB (내용 500자 × 한글 UTF-8 3바이트 + 나머지 컬럼과 인덱스)
 - 트리당 최대 200개(A-08) → 트리 하나에 최대 약 0.4 MB
-- Supabase 무료 500 MB 기준으로 꽉 찬 트리 약 1,200개 분량이다. 실제로는 대부분 트리가 훨씬 적게 받을 것으로 보지만, **사용자 수는 추정 근거가 없다**
+- 500 MB 기준으로 꽉 찬 트리 약 1,200개 분량이다. 실제로는 대부분 트리가 훨씬 적게 받을 것으로 보지만, **사용자 수는 추정 근거가 없다**

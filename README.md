@@ -8,7 +8,7 @@ React + Spring Boot 모노레포입니다. 협업 규칙은 [AGENTS.md](AGENTS.m
 |---|---|
 | Frontend | Vite 8, React 19 (+ React Compiler), TypeScript 7, TanStack Router/Query, Zustand, React Hook Form + Zod, Tailwind CSS v4 + shadcn/ui, Vitest, Playwright, oxlint, Prettier |
 | Backend | Java 25, Spring Boot 4.1, Spring Security 7, Spring Data JPA, Flyway, springdoc-openapi, Testcontainers |
-| Infra | PostgreSQL 18 (Docker Compose), GitHub Actions |
+| Infra | MySQL 8.4 (로컬 Docker Compose, 운영은 8.0.16 이상), GitHub Actions |
 
 ## 사전 준비
 
@@ -20,7 +20,7 @@ React + Spring Boot 모노레포입니다. 협업 규칙은 [AGENTS.md](AGENTS.m
 ## 실행
 
 ```bash
-# 1. 로컬 DB (호스트 포트 5433)
+# 1. 로컬 DB: MySQL 8.4 (호스트 포트 3307)
 docker compose up -d
 
 # 2. 백엔드 → http://localhost:8080
