@@ -5,9 +5,23 @@
 ## Key Points (확정)
 
 - **백엔드: Spring Boot 유지** (PR #4의 뼈대: Java 25, Spring Boot 4.1)
-- **DB: Supabase 무료 티어 PostgreSQL**
-- **서버: 이미 운영 중인 AWS 서버에 함께 배포**한다. 새 서버 비용은 생기지 않는다.
+- **DB: 배포 인프라의 MySQL (8.0.16 이상)**. 2026-11-19 지인 요청으로 Supabase PostgreSQL에서 전환 (#33)
+- **서버: 지인의 클라우드 네이티브 인프라에 배포**한다. 새 서버 비용은 생기지 않는다.
 - **콜드 스타트는 허용하지 않는다.** 링크를 누른 친구가 바로 화면을 봐야 한다. 기존 AWS 서버가 상시 실행 중이므로 이 조건을 충족한다.
+
+## 배포 인프라 (2026-11-19, 지인 답변)
+
+| 항목 | 답변 | 영향 |
+|---|---|---|
+| 배포 방식 | 저장소에 올리면 검사 후 **롤링 업데이트**. 서버에 직접 접속하지 않는다. 저장소 주소를 주면 그쪽 사이트에서 빌드한다 | 저장소에 빌드 파일(Dockerfile)을 둔다. SSH 배포 절차는 필요 없다 |
+| 구성 | 클라우드 네이티브. CI/CD, DR·HA, 헬스 체크 기반 교체 | 장애 시 자동 교체. 12/25 직접 대응 부담이 줄어든다 |
+| 확장 | 수직·수평 확장 가능, 제한 없음 | GCP 이전 계획이 필요 없다. 대신 **서버가 여러 대일 때 세션·Rate Limit·예약 작업을 공유해야 한다** |
+| CPU | **arm64** | 이미지를 arm64로 빌드한다. CVE-2026-114938(x86-64 전용)은 해당 없음 |
+| 의존성 | Docker 컨테이너로 격리 | 같은 서버의 다른 서비스와 충돌 걱정 없음 |
+| DB | MySQL 형식으로 바꿔 달라는 요청. 제공 여부·버전은 미확인 | MySQL 8.0.16 이상으로 전환 (#33) |
+| 도메인 | kpokemon 도메인으로 연결 예정 | 정확한 주소 미확인. OAuth 리다이렉트 URI를 새로 등록해야 한다. 주소에 "pokemon"이 들어가면 IP 위험이 커진다 |
+
+남은 확인 사항은 [남은 질문](_open-questions.md)의 "배포 인프라"에 있다.
 
 ## 비용 관점
 
@@ -15,7 +29,7 @@
 - 비용 위험: Supabase 무료 한도 초과, 기존 서버 자원 부족, 데이터 전송량
 - 이미지: 포켓몬 이미지를 직접 호스팅하지 않으면 이미지 트래픽 비용이 생기지 않는다 (ip-asset-policy.md의 "이미지 제공 방식"과 연결)
 
-## Supabase 무료 티어 조사 (2026-11-16 기준)
+## Supabase 무료 티어 조사 (2026-11-16 기준) — 사용 안 함 (2026-11-19 MySQL 전환)
 
 **DB 용량, 데이터 전송량, 컴퓨트는 2026-11-18에 [공식 가격 페이지](https://supabase.com/pricing)의 Free 플랜 항목으로 확인했다.** 일시 중지·백업·프로젝트 수·복구 기간도 같은 날 공식 가격 페이지와 [Billing](https://supabase.com/docs/guides/platform/billing-on-supabase), [Upgrading](https://supabase.com/docs/guides/platform/upgrading) 문서로 확인했다. 단, **무엇을 "활동"으로 보는지와 중지 전 경고 메일 여부는 공식 문서에 없다.** 연결 방식은 Supabase 공식 문서 기준이다.
 
@@ -34,7 +48,7 @@
 
 출처: [Supabase 연결 문서](https://supabase.com/docs/guides/database/connecting-to-postgres), [IPv4/IPv6 호환성](https://supabase.com/docs/guides/troubleshooting/supabase--your-network-ipv4-and-ipv6-compatibility-cHe3BP), [Spring Boot 퀵스타트](https://supabase.com/docs/guides/getting-started/quickstarts/spring-boot), [Pooling and limits](https://supabase.com/docs/guides/database/connecting-to-postgres/pooling-and-limits), [JetAdmin 가격 가이드](https://www.jetadmin.io/blog/supabase-pricing-2026-guide-to-plans-limits-and-real-world-costs/), [DEV: 2026 무료 티어 한도](https://dev.to/mahdi_benrhouma_fe1c6005/supabase-free-tier-limits-in-2026-what-you-actually-get-and-when-you-will-hit-them-4mhe)
 
-## Supabase 프로젝트 설정 (2026-11-18 생성)
+## Supabase 프로젝트 설정 (2026-11-18 생성) — 사용 안 함 (2026-11-19 MySQL 전환, 프로젝트는 삭제 예정)
 
 | 항목 | 설정 | 이유 |
 |---|---|---|
@@ -64,7 +78,7 @@ DB_PASSWORD=<생성한 비밀번호>
 | IN-2 | `DB_URL`을 Session pooler(5432)로 설정하고, Hikari 커넥션 풀은 작게 잡는다 (공유 pooler의 연결 수 제한 고려) |
 | IN-3 | **일시 중지 방지:** 매일 DB를 조회하는 예약 작업을 둔다. "활동"의 정의가 공식 문서에 없으므로, 실제 사용자 요청과 같은 경로(우리 API → DB)로 조회해 가능성을 높이고, 효과는 보장되지 않는 것으로 본다 |
 | IN-6 | **중지 감지와 복구:** 헬스 체크가 DB 연결을 포함하게 해 중지를 알아챈다. 중지되면 대시보드에서 수동 복구한다. 배포 직전(11/28)에 프로젝트 상태를 확인하고 중지돼 있으면 먼저 복구한다 |
-| IN-4 | **자체 백업:** 하루 1회 `pg_dump`를 AWS 서버나 다른 저장소에 보관한다. 종료할 때 백업도 함께 삭제한다 (PV-4) |
+| IN-4 | **백업:** 배포 인프라의 MySQL 백업을 먼저 확인하고, 없으면 하루 1회 `mysqldump`를 별도 저장소에 보관한다. 종료할 때 백업도 함께 삭제한다 (PV-4) |
 | IN-5 | 로컬 개발은 지금처럼 Docker Compose의 PostgreSQL을 쓰고, 운영만 Supabase를 쓴다 |
 
 ## 보안: CVE-2026-114938 (Java4Shell)
@@ -87,7 +101,7 @@ DB_PASSWORD=<생성한 비밀번호>
 - 로컬 개발 환경은 CPU 조건을 만족하지 않아 급하지 않다. Temurin 패치가 나오면 로컬 JDK도 갱신한다
 - 출처: 위 공식 기록, [Cyber Kendra 기사](https://www.cyberkendra.com/2026/11/cve-2026-114938-pre-auth-rce-flaw-in-java-17-puts-servers-at-risk.html) (영향 버전·CPU 조건·패치 버전)
 
-## 기존 AWS 서버 (확정 정보)
+## 기존 AWS 서버 (2026-11-16 정보) — 지인 인프라 답변으로 대체
 
 - **EC2, 서울 리전(ap-northeast-2), 메모리 여유가 빠듯함**
 - → Supabase 프로젝트도 서울 리전에 만든다 (IN-1)
