@@ -82,6 +82,28 @@ class SchemaConstraintTests {
 	}
 
 	@Test
+	void 공유_ID는_대소문자가_다르면_다른_트리다() {
+		// MySQL 기본 콜레이션은 대소문자를 구분하지 않아, 컬럼을 utf8mb4_bin으로 두었다
+		treeRepository.saveAndFlush(
+				new Tree("aB3dE5fG7h", userRepository.saveAndFlush(new User(Provider.GOOGLE, "a")), "트리1"));
+		treeRepository.saveAndFlush(
+				new Tree("AB3DE5FG7H", userRepository.saveAndFlush(new User(Provider.GOOGLE, "b")), "트리2"));
+
+		assertThat(treeRepository.findByPublicId("aB3dE5fG7h")).get().extracting(Tree::getName).isEqualTo("트리1");
+		assertThat(treeRepository.findByPublicId("AB3DE5FG7H")).get().extracting(Tree::getName).isEqualTo("트리2");
+	}
+
+	@Test
+	void 제공자_고유_ID는_대소문자를_구분한다() {
+		// 네이버 고유 ID는 대소문자가 섞인 문자열이다
+		userRepository.saveAndFlush(new User(Provider.NAVER, "abcDEF123"));
+		userRepository.saveAndFlush(new User(Provider.NAVER, "ABCdef123"));
+
+		assertThat(userRepository.findByProviderAndProviderUserId(Provider.NAVER, "abcDEF123")).isPresent();
+		assertThat(userRepository.count()).isEqualTo(2);
+	}
+
+	@Test
 	void 공백뿐인_트리_이름은_저장되지_않는다() {
 		User owner = userRepository.saveAndFlush(new User(Provider.GOOGLE, "owner"));
 
