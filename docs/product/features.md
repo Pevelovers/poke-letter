@@ -93,7 +93,7 @@
 | F-OPS-03 | 공지 배너 | 공통 상단 | 운영자가 설정한 공지(종료 안내 등) 표시 | P2 | POL-END-01 |
 | F-OPS-04 | 헬스 체크 | — | `/actuator/health` | P0 | |
 | F-OPS-05 | DB 활동 유지 작업 | — | 매일 DB 조회 (Supabase 일시 중지 방지) | P0 | POL-OPS-02 |
-| F-OPS-06 | DB 백업 | — | P0는 수동 `pg_dump`, P1에서 매일 자동 | P0/P1 | POL-OPS-03 |
+| F-OPS-06 | DB 백업 | — | 배포 인프라가 백업을 제공하면 그것을 쓴다. 아니면 P0는 수동 `mysqldump`, P1에서 매일 자동 | P0/P1 | POL-OPS-03 |
 | F-OPS-07 | 남용 방지 | SCR-04 | 메시지 작성 Rate Limit. 차단되면 "잠시 후 다시 보내 주세요"와 남은 시간을 보여 주고, 작성 내용은 임시 저장에 남긴다 | P0 | POL-ABU-01, POL-MSG-05 |
 
 ### 국제화 (I18N)

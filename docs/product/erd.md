@@ -167,7 +167,7 @@ erDiagram
 SELECT c.id FROM characters c
 WHERE c.pack = 'pokemon' AND c.active
   AND NOT EXISTS (SELECT 1 FROM messages m WHERE m.tree_id = :treeId AND m.character_id = c.id)
-ORDER BY random() LIMIT 1;
+ORDER BY RAND() LIMIT 1;
 -- 결과가 없으면 조건 없이 전체에서 다시 뽑는다
 
 -- 받은 포켓몬 모아보기 (POL-CHR-05)
@@ -176,7 +176,7 @@ FROM messages WHERE tree_id = :treeId
 GROUP BY character_id ORDER BY first_received;
 ```
 
-- 캐릭터가 약 1,100행이라 `ORDER BY random()`으로도 충분하다고 본다 (추정)
+- 캐릭터가 약 1,100행이라 `ORDER BY RAND()`로도 충분하다고 본다 (추정)
 - 동시에 랜덤을 두 번 보내면 같은 포켓몬이 나올 수 있다. 정책상 문제없다고 보고 잠금은 걸지 않는다
 
 ## 마이그레이션 계획
