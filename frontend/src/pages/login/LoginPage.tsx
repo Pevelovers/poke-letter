@@ -17,7 +17,7 @@ export function LoginPage() {
   return (
     <PageLayout className="justify-center gap-8">
       <section className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl font-bold">{strings.login.title}</h1>
+        <h1 className="text-2xl">{strings.login.title}</h1>
         <p className="whitespace-pre-line text-muted-foreground">{strings.login.description}</p>
       </section>
       <div className="flex flex-col gap-3">
