@@ -34,10 +34,21 @@ export interface BallView {
   imageUrl: string
 }
 
+/** 메시지에 담긴 포켓몬. 이로치면 imageUrl이 이로치 이미지다 */
+export interface CharacterView {
+  characterId: number
+  name: string
+  imageUrl: string
+}
+
 export interface Decoration {
   messageId: number
   nickname: string
   ball: BallView
+  /** 이로치 당첨. 공개 전에도 온다 (POL-CHR-12) */
+  shiny: boolean
+  /** 공개 전에는 null, 공개 후에는 누구나 받는다 (POL-RVL-01, 03) */
+  character: CharacterView | null
   createdAt: string
 }
 
@@ -62,6 +73,23 @@ export interface ErrorResponse {
   code: string
   message: string
   fields?: Record<string, string>
+}
+
+export interface CreateMessageRequest {
+  nickname: string
+  content: string
+  characterId: number
+  shiny: boolean
+  ballId: number
+  allowMasking: boolean
+}
+
+export interface CreateMessageResponse {
+  messageId: number
+  nickname: string
+  ball: BallView
+  shiny: boolean
+  character: CharacterView
 }
 
 export type PokemonType =

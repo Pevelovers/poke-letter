@@ -17,6 +17,11 @@ interface PixelImageProps {
   loading?: 'lazy' | 'eager'
   /** 이미지와 대체 이미지가 모두 실패했을 때 그릴 요소. 기본은 볼 모양의 원 */
   fallback?: ReactNode
+  /**
+   * 브라우저 확대 등으로 원본과 다른 크기로 그려질 때 픽셀을 섞어 부드럽게 그린다.
+   * 정수배로 키우는 이미지(볼 2배 등)는 흐려지므로 쓰지 않는다
+   */
+  smooth?: boolean
 }
 
 /**
@@ -33,6 +38,7 @@ export function PixelImage({
   fallbackSrc = assets.defaultOrnament,
   loading = 'lazy',
   fallback,
+  smooth = false,
 }: PixelImageProps) {
   const [failedSrc, setFailedSrc] = useState<string[]>([])
   const candidates = [src, fallbackSrc].filter((candidate) => !failedSrc.includes(candidate))
@@ -61,7 +67,12 @@ export function PixelImage({
       decoding="async"
       draggable={false}
       onError={() => setFailedSrc((prev) => [...prev, candidates[0]])}
-      className={cn('pixelated inline-block select-none', className)}
+      className={cn(
+        // 트리 장면처럼 부모가 pixelated면 물려받으므로 smooth일 때는 auto로 되돌린다
+        smooth ? '[image-rendering:auto]' : 'pixelated',
+        'inline-block select-none',
+        className,
+      )}
     />
   )
 }

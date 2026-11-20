@@ -11,20 +11,22 @@ const SCALE = 2
 
 /**
  * 트리 위 장식 자리 10곳 (POL-TRE-04 한 페이지 10개).
- * 값은 2배율 트리 이미지(300×360) 안에서 볼 중심의 px 좌표다.
+ * 값은 2배율 트리 이미지(300×360) 안에서 장식 중심의 px 좌표다.
+ * 줄(1·2·3·4개) 사이를 약 70px, 같은 줄 장식 사이를 80~90px로 벌려 닉네임이 포켓몬을 덜 가리게 한다.
+ * 모든 자리는 트리 가지 안쪽에 둔다.
  * [제안] 배치 방식은 디자인 확정 전 임시값이다 (design.md "남은 결정").
  */
 const SLOTS: ReadonlyArray<readonly [x: number, y: number]> = [
-  [150, 112],
-  [108, 166],
-  [192, 166],
-  [84, 222],
-  [150, 206],
-  [216, 222],
-  [60, 278],
-  [124, 270],
-  [178, 274],
-  [240, 280],
+  [150, 80],
+  [105, 150],
+  [195, 150],
+  [60, 220],
+  [150, 214],
+  [240, 220],
+  [30, 286],
+  [110, 280],
+  [190, 280],
+  [270, 286],
 ]
 
 interface TreeSceneProps {
@@ -71,9 +73,11 @@ export function TreeScene({ decorations, onDecorationClick, now }: TreeSceneProp
           {decorations.slice(0, SLOTS.length).map((decoration, index) => {
             const [x, y] = SLOTS[index]
             return (
+              // 크기 0인 칸에서 가운데 정렬해 자리 중심에 둔다. translate를 쓰면 장식마다
+              // 쌓임 맥락이 생겨 닉네임이 다음 장식의 그림 아래로 깔린다
               <li
                 key={decoration.messageId}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
+                className="absolute flex size-0 items-center justify-center"
                 style={{ left: x, top: y }}
               >
                 <Ornament

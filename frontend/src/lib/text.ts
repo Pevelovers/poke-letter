@@ -5,3 +5,10 @@
 export function countChars(value: string): number {
   return Array.from(value).length
 }
+
+/** 마지막 글자에 받침이 있는지 (조사 와/과 고르기). 한글이 아니면 받침 없음으로 본다 */
+export function hasFinalConsonant(word: string): boolean {
+  const code = word.charCodeAt(word.length - 1)
+  if (code < 0xac00 || code > 0xd7a3) return false
+  return (code - 0xac00) % 28 !== 0
+}
