@@ -51,12 +51,13 @@ describe('포켓몬 선택기', () => {
 })
 
 describe('볼 선택기', () => {
-  it('몬스터볼이 미리 선택되어 있고, 고르면 작성 화면에 반영된다', async () => {
+  it('38종 중 몬스터볼이 미리 선택되어 있고, 고르면 작성 화면에 반영된다', async () => {
     const { router } = renderRoute(`${TREE}/ball`)
 
     expect(
       await screen.findByRole('button', { name: '몬스터볼', pressed: true }),
     ).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { pressed: false })).toHaveLength(37)
     await userEvent.click(screen.getByRole('button', { name: '프리미어볼' }))
 
     expect(router.state.location.pathname).toBe(TREE)
