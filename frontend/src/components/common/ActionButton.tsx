@@ -26,7 +26,7 @@ export function ActionButton({
     <Button
       disabled={disabled || pending}
       aria-busy={pending || undefined}
-      className={cn('h-12 w-full rounded-xl text-base font-semibold', className)}
+      className={cn('h-12 w-full rounded-xl font-game text-base font-normal', className)}
       {...props}
     >
       {pending ? (

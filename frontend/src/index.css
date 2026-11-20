@@ -6,10 +6,18 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * 화면 전체 글꼴: Pokemon DPPt (aztecwarrior28, FontStruct, CC BY-SA 3.0)
+ * 글꼴은 두 가지로 나눈다. 분류를 바꿀 때는 아래 --font-game, --font-sans와
+ * @layer base의 규칙만 고친다.
+ * - 게임 문구 (font-game): 서비스 이름, 화면 제목, 주요 버튼, 확인 창, D-day 배지.
+ *   도트 글꼴이라 16px 이상에서만 쓴다
+ * - 일반 문구 (font-sans, 기본값): 설명, 라벨, 입력값, 안내, 작은 글씨 전부
+ */
+
+/*
+ * 게임 문구 글꼴: Pokemon DPPt (aztecwarrior28, FontStruct, CC BY-SA 3.0)
  * https://fontstruct.com/fontstructions/show/1951915/pokemon-dppt-4
  * 게임 글꼴을 재현한 폰트라 저장소에 커밋하지 않는다(.gitignore, POL-IP-03 취지).
- * 파일이 없으면 Geist와 시스템 글꼴로 보인다. 배포에 쓰려면 출처·라이선스 표기가 필요하다.
+ * 파일이 없으면 일반 문구 글꼴로 보인다. 배포에 쓰려면 출처·라이선스 표기가 필요하다.
  */
 @font-face {
   font-family: 'Pokemon DPPt';
@@ -19,9 +27,22 @@
   font-display: swap;
 }
 
+/*
+ * 일반 문구 글꼴: 원스토어 모바일POP체 (눈누 배포, jsDelivr CDN)
+ * [확인 필요] 원스토어 폰트 라이선스의 웹 임베딩·출처 표기 조건
+ */
+@font-face {
+  font-family: 'OneStoreMobilePop';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff')
+    format('woff');
+  font-weight: normal;
+  font-display: swap;
+}
+
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Pokemon DPPt', 'Geist Variable', sans-serif;
+  --font-heading: var(--font-game);
+  --font-sans: 'OneStoreMobilePop', 'Geist Variable', sans-serif;
+  --font-game: 'Pokemon DPPt', 'OneStoreMobilePop', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -169,6 +190,11 @@
   }
   html {
     @apply font-sans;
+  }
+  /* 화면 제목과 대화상자 제목은 게임 문구다 */
+  h1,
+  h2 {
+    @apply font-game font-normal;
   }
 }
 
