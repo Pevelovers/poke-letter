@@ -34,7 +34,7 @@ export function PageLayout({
         {!hideHeader && (
           <header className="flex h-14 items-center justify-between px-4">
             {headerLeft ?? (
-              <Link to="/" className="text-lg font-bold text-primary">
+              <Link to="/" className="font-game text-xl text-primary">
                 {strings.appName}
               </Link>
             )}

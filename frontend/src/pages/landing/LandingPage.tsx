@@ -23,9 +23,7 @@ export function LandingPage() {
     <PageLayout className="gap-6">
       <section className="flex flex-col items-center gap-3 pt-4 text-center">
         <RevealBadge revealAt={revealAt} revealed={revealed} now={now} />
-        <h1 className="text-2xl leading-snug font-bold whitespace-pre-line">
-          {strings.landing.headline}
-        </h1>
+        <h1 className="text-2xl leading-snug whitespace-pre-line">{strings.landing.headline}</h1>
         <p className="text-muted-foreground">{strings.landing.description}</p>
       </section>
 
