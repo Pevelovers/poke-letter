@@ -34,10 +34,11 @@ export function PokemonConfirmDialog({
 }: PokemonConfirmDialogProps) {
   return (
     <AlertDialog open={candidate !== null} onOpenChange={(open) => !open && onCancel()}>
-      <AlertDialogContent className="max-w-xs">
+      {/* size="sm"이면 PC 폭에서도 왼쪽 정렬로 바뀌지 않고 가운데 정렬을 유지한다 */}
+      <AlertDialogContent size="sm">
         {candidate && (
           <>
-            <AlertDialogHeader className="items-center text-center">
+            <AlertDialogHeader className="place-items-center text-center">
               <Sparkle active={candidate.shiny}>
                 <PixelImage
                   src={
@@ -60,7 +61,9 @@ export function PokemonConfirmDialog({
               <AlertDialogDescription className="font-game text-2xl text-foreground">
                 {candidate.character.name}
               </AlertDialogDescription>
-              <AlertDialogTitle className="text-xl">{strings.picker.confirmTitle}</AlertDialogTitle>
+              <AlertDialogTitle className="text-xl font-normal">
+                {strings.picker.confirmTitle}
+              </AlertDialogTitle>
             </AlertDialogHeader>
             <AlertDialogFooter className="grid grid-cols-2 gap-2">
               <AlertDialogCancel className="h-11 font-game text-base">
