@@ -80,6 +80,13 @@ export const strings = {
     starters: '세대별 스타팅 포켓몬',
     empty: '찾는 포켓몬이 없어요. 다른 이름이나 초성으로 찾아보세요.',
     selected: '선택됨',
+    random: '랜덤',
+    randomLabel: '전체 포켓몬 중 랜덤으로 고르기',
+    confirmTitle: '이 아이를 맡길까?',
+    yes: '예',
+    no: '아니오',
+    shinyBadge: '이로치',
+    shinyCongrats: '반짝반짝! 이로치가 나타났어요',
     loadError: '목록을 불러오지 못했어요.',
   },
   pokemonTypes: {

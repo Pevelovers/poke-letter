@@ -82,5 +82,6 @@ export const mockCharacters: Character[] = rows
     generation,
     types,
     imageUrl: `${SPRITE}/${spriteId}.png`,
+    shinyImageUrl: `${SPRITE}/shiny/${spriteId}.png`,
   }))
   .sort((a, b) => a.characterId - b.characterId)
