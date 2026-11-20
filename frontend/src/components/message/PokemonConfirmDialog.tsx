@@ -53,13 +53,10 @@ export function PokemonConfirmDialog({
                   loading="eager"
                 />
               </Sparkle>
-              {candidate.shiny && (
-                <p className="font-game text-base text-accent-foreground">
-                  {strings.picker.shinyCongrats}
-                </p>
-              )}
               <AlertDialogDescription className="font-game text-2xl text-foreground">
-                {candidate.character.name}
+                {candidate.shiny
+                  ? strings.picker.shinyName(candidate.character.name)
+                  : candidate.character.name}
               </AlertDialogDescription>
               <AlertDialogTitle className="text-xl font-normal">
                 {strings.picker.confirmTitle}

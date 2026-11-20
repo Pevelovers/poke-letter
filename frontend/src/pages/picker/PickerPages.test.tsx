@@ -72,8 +72,10 @@ describe('포켓몬 선택기', () => {
     )
 
     const dialog = await screen.findByRole('alertdialog')
-    expect(within(dialog).getByText('이상해씨')).toBeInTheDocument()
-    expect(within(dialog).getByText(/이로치가 나타났어요/)).toBeInTheDocument()
+    expect(within(dialog).getByText('색이 다른 이상해씨')).toBeInTheDocument()
+    expect(within(dialog).queryByText(/이로치가 나타났어요/)).not.toBeInTheDocument()
+    // 문구는 없애도 반짝임은 남긴다
+    expect(dialog.querySelector('[data-shiny="true"]')).not.toBeNull()
     expect(within(dialog).getByRole('img', { name: '이상해씨' })).toHaveAttribute(
       'src',
       expect.stringContaining('/shiny/1.png'),

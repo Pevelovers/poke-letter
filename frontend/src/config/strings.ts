@@ -123,7 +123,8 @@ export const strings = {
     yes: '예',
     no: '아니오',
     shinyBadge: '이로치',
-    shinyCongrats: '반짝반짝! 이로치가 나타났어요',
+    /** 이로치면 확인 창에서 이름 앞에 붙인다. 게임 속 표현을 따른다 */
+    shinyName: (name: string) => `색이 다른 ${name}`,
     loadError: '목록을 불러오지 못했어요.',
   },
   pokemonTypes: {
