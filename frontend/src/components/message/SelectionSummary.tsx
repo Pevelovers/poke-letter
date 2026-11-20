@@ -92,7 +92,7 @@ function SelectionRow({
     >
       <span className="w-14 shrink-0 text-sm font-medium">{label}</span>
       <span className="flex size-16 items-center justify-center">{image}</span>
-      <span className="flex-1 truncate">{value}</span>
+      <span className="flex-1 truncate font-game text-base">{value}</span>
       <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
     </Link>
   )

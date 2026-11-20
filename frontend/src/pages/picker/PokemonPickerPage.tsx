@@ -91,7 +91,7 @@ export function PokemonPickerPage({ selectedId, onSelect, onBack }: PokemonPicke
         <Button
           type="button"
           variant="secondary"
-          className="h-11 shrink-0 rounded-xl px-4"
+          className="h-11 shrink-0 rounded-xl px-4 font-game text-base"
           onClick={pickRandomCharacter}
           disabled={!data}
           aria-label={strings.picker.randomLabel}
@@ -214,7 +214,7 @@ function PokemonCell({
         height={spriteSize.pokemon.height}
         scale={1}
       />
-      <span className="truncate text-sm">{character.name}</span>
+      <span className="w-full truncate px-1 text-center font-game text-base">{character.name}</span>
     </button>
   )
 }
