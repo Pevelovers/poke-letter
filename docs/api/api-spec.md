@@ -1,6 +1,7 @@
 # API 명세
 
-> 버전 1.0 · 2026-11-18 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
+> 버전 1.1 · 2026-11-20 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
+> 2026-11-20 개정 (#38, BE 구현 전이라 하위 호환 없이 바꿈): 숨김 랜덤을 없애고 선택기의 랜덤 선택 버튼으로 바꿈, 선택 확인 창, 이로치 2%, 공개 전 이로치 볼 반짝임, 공개 후 트리에 포켓몬 표시
 > 근거: [기능 정의서](../product/features.md), [정책 정의서](../product/policies.md), [ERD](../product/erd.md)
 > 구현 후에는 springdoc이 만드는 OpenAPI(`/v3/api-docs`)가 단일 출처가 되고, FE 타입은 `pnpm api:generate`로 생성한다. 이 문서는 구현 전 합의용 계약이다.
 
@@ -146,12 +147,14 @@ OAuth 앱 등록 결과 (2026-11-18)
   "messageCount": 23,
   "full": false,
   "decorations": [
-    { "messageId": 101, "nickname": "피카츄친구", "ball": { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." }, "createdAt": "2026-12-02T21:14:00+09:00" }
+    { "messageId": 101, "nickname": "피카츄친구", "ball": { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." }, "shiny": true, "character": null, "createdAt": "2026-12-02T21:14:00+09:00" }
   ],
   "page": { "number": 0, "size": 10, "totalPages": 3 }
 }
 ```
-- **공개 여부와 상관없이 내용과 포켓몬은 이 응답에 없다** (POL-RVL-01, 03)
+- **메시지 내용은 공개 여부와 상관없이 이 응답에 없다** (POL-RVL-03)
+- `character`: 공개 전에는 `null` (POL-RVL-01). 공개 후에는 `{ "characterId", "name", "imageUrl" }`이고 **누구나 받는다.** FE는 공개 후 트리에 볼 대신 포켓몬을 단다 (POL-RVL-03). 이로치면 `imageUrl`이 이로치 이미지다
+- `shiny`: 이로치 당첨 여부. 공개 전에도 내려준다. FE는 공개 전 이로치 볼에 반짝임을 표시한다 (POL-CHR-12)
 - `isOwner`: 로그인한 주인이면 `true` → FE가 삭제·개봉 버튼을 보여 준다
 - `full`: 메시지가 최대치(200개)면 `true` → FE가 "메시지 남기기" 버튼을 숨긴다 (F-TRE-09)
 - `ball`: 장식으로 달린 볼. 작성자가 고른 것이라 공개 전에도 보여 준다 (POL-CHR-10). 대체 팩이면 일반 크리스마스 볼로 바꿔 돌려준다 (POL-IP-02)
@@ -173,13 +176,9 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 
 ### `POST /trees/{treeId}/messages` — 메시지 보내기 (누구나)
 
-요청 (직접 고름)
+요청
 ```json
-{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": 25, "random": false, "ballId": 4, "allowMasking": false }
-```
-요청 (랜덤)
-```json
-{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": null, "random": true, "ballId": 4, "allowMasking": false }
+{ "nickname": "피카츄친구", "content": "메리 크리스마스!", "characterId": 13300, "shiny": false, "ballId": 4, "allowMasking": false }
 ```
 응답 `201 Created`
 ```json
@@ -187,13 +186,15 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
   "messageId": 101,
   "nickname": "피카츄친구",
   "ball": { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." },
-  "selectionType": "CHOSEN",
-  "character": { "characterId": 25, "name": "피카츄", "imageUrl": "https://..." }
+  "shiny": false,
+  "character": { "characterId": 13300, "name": "이브이", "imageUrl": "https://..." }
 }
 ```
-- 랜덤이면 `"selectionType": "RANDOM"`, `"character": null` (POL-CHR-04)
-- 검증: `nickname` 1~10자, `content` 1~500자, `random=false`면 `characterId` 필수, `random=true`면 `characterId`는 무시 (POL-MSG-01, 02)
-- `ballId` 필수: 활성 볼이어야 한다. 없으면 `404 BALL_NOT_FOUND`. FE는 작성 폼을 열 때 몬스터볼을 미리 선택해 둔다 (POL-CHR-10). 랜덤 보내기여도 볼은 작성자가 고른다
+- `character`는 항상 있다. 이로치면 `imageUrl`이 이로치 이미지다
+- 검증: `nickname` 1~10자, `content` 1~500자, `characterId` 필수(활성 캐릭터, 없으면 `404 CHARACTER_NOT_FOUND`) (POL-MSG-01, 02)
+- `shiny` (기본 `false`): FE가 확인 창에서 뽑은 이로치 당첨 결과 (POL-CHR-12). 서버는 검증하지 않고 저장한다
+- 숨김 랜덤(`random`)과 `selectionType`은 없앴다. 랜덤 선택은 FE 선택기에서 한다 (POL-CHR-03, 04)
+- `ballId` 필수: 활성 볼이어야 한다. 없으면 `404 BALL_NOT_FOUND`. FE는 작성 폼을 열 때 몬스터볼을 미리 선택해 둔다 (POL-CHR-10)
 - `allowMasking` (기본 `true`): 필터에 걸렸을 때 마스킹해서 저장해도 되는지 (POL-FLT-07)
   - `false`: 걸리면 저장하지 않고 `422 INAPPROPRIATE_CONTENT` (`fields: ["content"]` 등). 걸리지 않으면 그대로 저장
   - `true`: 걸려도 마스킹해서 저장한다
@@ -217,8 +218,8 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
       "messageId": 101,
       "nickname": "피카츄친구",
       "content": "메리 크리스마스!",
-      "selectionType": "RANDOM",
-      "character": { "characterId": 133, "name": "이브이", "imageUrl": "https://..." },
+      "shiny": true,
+      "character": { "characterId": 13300, "name": "이브이", "imageUrl": "https://.../shiny/133.png" },
       "ball": { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." },
       "createdAt": "2026-12-02T21:14:00+09:00"
     }
@@ -252,13 +253,14 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
   "characters": [
     { "characterId": 2500, "dexNo": 25, "form": "base", "name": "피카츄", "generation": 1, "types": ["electric"], "imageUrl": "https://..." },
     { "characterId": 2600, "dexNo": 26, "form": "base", "name": "라이츄", "generation": 1, "types": ["electric"], "imageUrl": "https://..." },
-    { "characterId": 2601, "dexNo": 26, "form": "alola", "name": "라이츄", "generation": 7, "types": ["electric", "psychic"], "imageUrl": "https://..." }
+    { "characterId": 2601, "dexNo": 26, "form": "alola", "name": "라이츄", "generation": 7, "types": ["electric", "psychic"], "imageUrl": "https://...", "shinyImageUrl": "https://..." }
   ]
 }
 ```
 - `Cache-Control: public, max-age=86400` + `ETag`. 목록이 거의 바뀌지 않는다
 - 활성 팩이 `ornament`면 오너먼트 N종을 같은 형식으로 돌려준다 (POL-IP-02)
 - `characterId` = 도감 번호 × 100 + 폼 번호 (ERD)
+- `shinyImageUrl`: 이로치 스프라이트. 없는 폼은 `imageUrl`과 같은 값을 준다 (POL-CHR-12). 위 예시는 줄였고 모든 항목에 있다
 - `name`: **리전폼도 원래 이름 그대로**다. 같은 이름이 둘 이상 나올 수 있고, 이미지와 `form`으로 구분한다 (POL-CHR-06)
 - `generation`: 폼이 처음 나온 세대 1~9 (POL-CHR-07)
 - `types`: 1~2개, PokéAPI 영문 타입 이름. 한국어 표기 18종은 FE가 고정 매핑으로 가진다. 세대·타입 필터는 FE에서 처리한다 (POL-CHR-08)
@@ -290,7 +292,8 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 {
   "items": [
     {
-      "character": { "characterId": 25, "name": "피카츄", "imageUrl": "https://..." },
+      "character": { "characterId": 2500, "name": "피카츄", "imageUrl": "https://..." },
+      "shiny": false,
       "times": 3,
       "senders": ["피카츄친구", "로켓단", "웅이"],
       "firstReceivedAt": "2026-12-02T21:14:00+09:00"
@@ -300,6 +303,7 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 }
 ```
 - 전체 수, 수집률, 빈칸은 내려주지 않는다 (POL-CHR-05)
+- 같은 포켓몬이라도 이로치는 따로 묶는다 (POL-CHR-12)
 
 ---
 
