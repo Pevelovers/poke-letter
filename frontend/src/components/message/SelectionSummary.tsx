@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 
 import { ballsQuery, charactersQuery } from '@/api/queries'
 import { PixelImage } from '@/components/common/PixelImage'
+import { Sparkle } from '@/components/common/Sparkle'
 import { spriteSize } from '@/config/assets'
 import { strings } from '@/config/strings'
 import type { MessageDraft } from '@/stores/messageDraft'
@@ -23,26 +24,32 @@ export function SelectionSummary({ treeId, draft }: SelectionSummaryProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      {!draft.random && (
+      {
         <SelectionRow
           to="/t/$treeId/write/pokemon"
           treeId={treeId}
           label={strings.write.pokemon}
-          value={character?.name ?? strings.write.choosePokemon}
+          value={
+            character
+              ? `${character.name}${draft.shiny ? ` · ${strings.picker.shinyBadge}` : ''}`
+              : strings.write.choosePokemon
+          }
           image={
             character && (
-              <PixelImage
-                src={character.imageUrl}
-                alt=""
-                width={spriteSize.pokemon.width}
-                height={spriteSize.pokemon.height}
-                scale={1}
-                className="-my-4"
-              />
+              <Sparkle active={draft.shiny}>
+                <PixelImage
+                  src={draft.shiny ? character.shinyImageUrl : character.imageUrl}
+                  alt=""
+                  width={spriteSize.pokemon.width}
+                  height={spriteSize.pokemon.height}
+                  scale={1}
+                  className="-my-4"
+                />
+              </Sparkle>
             )
           }
         />
-      )}
+      }
       <SelectionRow
         to="/t/$treeId/write/ball"
         treeId={treeId}

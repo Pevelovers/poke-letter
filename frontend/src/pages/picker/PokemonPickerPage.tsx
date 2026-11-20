@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Dices } from 'lucide-react'
 import { useDeferredValue, useMemo, useState } from 'react'
 
 import { charactersQuery } from '@/api/queries'
@@ -7,6 +8,11 @@ import { PixelImage } from '@/components/common/PixelImage'
 import { ToggleChip } from '@/components/common/ToggleChip'
 import { VirtualGrid } from '@/components/common/VirtualGrid'
 import { BackHeader } from '@/components/layout/BackHeader'
+import {
+  PokemonConfirmDialog,
+  type PokemonCandidate,
+} from '@/components/message/PokemonConfirmDialog'
+import { Button } from '@/components/ui/button'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { Input } from '@/components/ui/input'
 import { spriteSize } from '@/config/assets'
@@ -17,6 +23,7 @@ import {
   isEmptyFilter,
   starterCharacters,
 } from '@/lib/character-filter'
+import { pickRandom, rollShiny } from '@/lib/random'
 import { cn } from '@/lib/utils'
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -24,7 +31,8 @@ const TYPES = Object.keys(strings.pokemonTypes) as PokemonType[]
 
 interface PokemonPickerPageProps {
   selectedId: number | null
-  onSelect: (character: Character) => void
+  /** 확인 창에서 "예"를 누르면 부른다. shiny는 확인 창을 띄울 때 뽑은 결과다 */
+  onSelect: (character: Character, shiny: boolean) => void
   onBack: () => void
 }
 
@@ -38,6 +46,15 @@ export function PokemonPickerPage({ selectedId, onSelect, onBack }: PokemonPicke
   const [generations, setGenerations] = useState<number[]>([])
   const [types, setTypes] = useState<PokemonType[]>([])
   const deferredQuery = useDeferredValue(query)
+  const [candidate, setCandidate] = useState<PokemonCandidate | null>(null)
+
+  // 확인 창을 띄울 때마다 이로치를 새로 뽑는다 (POL-CHR-12)
+  const openConfirm = (character: Character) => setCandidate({ character, shiny: rollShiny() })
+  // 검색·필터와 상관없이 전체 포켓몬 중에서 고른다 (POL-CHR-03)
+  const pickRandomCharacter = () => {
+    const character = pickRandom(data?.characters ?? [])
+    if (character) openConfirm(character)
+  }
 
   // 초성 문자열은 목록을 받을 때 한 번만 계산한다
   const indexed = useMemo(() => indexCharacters(data?.characters ?? []), [data])
@@ -61,15 +78,28 @@ export function PokemonPickerPage({ selectedId, onSelect, onBack }: PokemonPicke
       <label className="sr-only" htmlFor="pokemon-search">
         {strings.picker.searchLabel}
       </label>
-      <Input
-        id="pokemon-search"
-        type="search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={strings.picker.searchPlaceholder}
-        autoComplete="off"
-        className="h-11 rounded-xl bg-card text-base"
-      />
+      <div className="flex gap-2">
+        <Input
+          id="pokemon-search"
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder={strings.picker.searchPlaceholder}
+          autoComplete="off"
+          className="h-11 rounded-xl bg-card text-base"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          className="h-11 shrink-0 rounded-xl px-4"
+          onClick={pickRandomCharacter}
+          disabled={!data}
+          aria-label={strings.picker.randomLabel}
+        >
+          <Dices aria-hidden />
+          {strings.picker.random}
+        </Button>
+      </div>
 
       {showFilters && (
         <div className="flex flex-col gap-2">
@@ -131,9 +161,17 @@ export function PokemonPickerPage({ selectedId, onSelect, onBack }: PokemonPicke
           <PokemonCell
             character={character}
             selected={character.characterId === selectedId}
-            onSelect={() => onSelect(character)}
+            onSelect={() => openConfirm(character)}
           />
         )}
+      />
+      <PokemonConfirmDialog
+        candidate={candidate}
+        onCancel={() => setCandidate(null)}
+        onConfirm={({ character, shiny }) => {
+          setCandidate(null)
+          onSelect(character, shiny)
+        }}
       />
     </PageLayout>
   )

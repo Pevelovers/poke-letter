@@ -111,6 +111,8 @@ export interface Character {
   generation: number | null
   types: PokemonType[] | null
   imageUrl: string
+  /** 이로치 스프라이트. 없는 폼은 imageUrl과 같다 (POL-CHR-12) */
+  shinyImageUrl: string
 }
 
 export interface CharactersResponse {

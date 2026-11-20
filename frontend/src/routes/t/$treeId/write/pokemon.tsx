@@ -17,9 +17,9 @@ function PokemonPickerRoute() {
 
   return (
     <PokemonPickerPage
-      selectedId={draft.random ? null : draft.characterId}
-      onSelect={(character) => {
-        update(treeId, { characterId: character.characterId, random: false })
+      selectedId={draft.characterId}
+      onSelect={(character, shiny) => {
+        update(treeId, { characterId: character.characterId, shiny })
         back()
       }}
       onBack={back}

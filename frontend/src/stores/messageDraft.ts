@@ -8,7 +8,8 @@ export interface MessageDraft {
   nickname: string
   content: string
   characterId: number | null
-  random: boolean
+  /** 확인 창에서 당첨된 이로치 여부 (POL-CHR-12) */
+  shiny: boolean
   ballId: number
 }
 
@@ -16,7 +17,7 @@ export const emptyDraft: MessageDraft = {
   nickname: '',
   content: '',
   characterId: null,
-  random: false,
+  shiny: false,
   ballId: DEFAULT_BALL_ID,
 }
 
