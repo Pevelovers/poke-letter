@@ -1,11 +1,15 @@
 import type {
   AppConfigResponse,
+  BallsResponse,
+  CharactersResponse,
   CreateTreeRequest,
   CreateTreeResponse,
   LoginProvider,
   MeResponse,
   TreeResponse,
 } from '../types'
+import { mockCharacters } from './characters'
+import { mockBalls } from './fixtures'
 import { findOwnedTree, loadMockState, saveMockState, type MockState } from './db'
 
 /**
@@ -109,6 +113,12 @@ const routes: Array<[method: string, pattern: RegExp, handler: Handler]> = [
       }
     },
   ],
+  [
+    'GET',
+    /^\/characters$/,
+    (): CharactersResponse => ({ pack: 'pokemon', characters: mockCharacters }),
+  ],
+  ['GET', /^\/balls$/, (): BallsResponse => ({ pack: 'pokemon', balls: mockBalls })],
 ]
 
 /** 목 모드에서 로그인 버튼을 누르면 OAuth 대신 이 함수가 로그인 상태를 만든다 */

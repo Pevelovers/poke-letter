@@ -63,3 +63,47 @@ export interface ErrorResponse {
   message: string
   fields?: Record<string, string>
 }
+
+export type PokemonType =
+  | 'normal'
+  | 'fire'
+  | 'water'
+  | 'electric'
+  | 'grass'
+  | 'ice'
+  | 'fighting'
+  | 'poison'
+  | 'ground'
+  | 'flying'
+  | 'psychic'
+  | 'bug'
+  | 'rock'
+  | 'ghost'
+  | 'dragon'
+  | 'dark'
+  | 'steel'
+  | 'fairy'
+
+export interface Character {
+  characterId: number
+  dexNo: number
+  form: string
+  /** 리전폼도 원래 이름 그대로다 (POL-CHR-06) */
+  name: string
+  /** 대체 팩이면 null */
+  generation: number | null
+  types: PokemonType[] | null
+  imageUrl: string
+  /** 이로치 스프라이트. 없는 폼은 imageUrl과 같다 (POL-CHR-12) */
+  shinyImageUrl: string
+}
+
+export interface CharactersResponse {
+  pack: 'pokemon' | 'ornament'
+  characters: Character[]
+}
+
+export interface BallsResponse {
+  pack: 'pokemon' | 'ornament'
+  balls: BallView[]
+}
