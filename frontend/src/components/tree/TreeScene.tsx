@@ -71,9 +71,11 @@ export function TreeScene({ decorations, onDecorationClick, now }: TreeSceneProp
           {decorations.slice(0, SLOTS.length).map((decoration, index) => {
             const [x, y] = SLOTS[index]
             return (
+              // 크기 0인 칸에서 가운데 정렬해 자리 중심에 둔다. translate를 쓰면 장식마다
+              // 쌓임 맥락이 생겨 닉네임이 다음 장식의 그림 아래로 깔린다
               <li
                 key={decoration.messageId}
-                className="absolute -translate-x-1/2 -translate-y-1/2"
+                className="absolute flex size-0 items-center justify-center"
                 style={{ left: x, top: y }}
               >
                 <Ornament
