@@ -1,7 +1,14 @@
 import { queryOptions } from '@tanstack/react-query'
 
 import { apiRequest } from './client'
-import type { AppConfigResponse, CreateTreeResponse, MeResponse, TreeResponse } from './types'
+import type {
+  AppConfigResponse,
+  BallsResponse,
+  CharactersResponse,
+  CreateTreeResponse,
+  MeResponse,
+  TreeResponse,
+} from './types'
 
 /** 쿼리 키를 한곳에서 관리해 무효화할 때 오타를 막는다 */
 export const queryKeys = {
@@ -9,6 +16,8 @@ export const queryKeys = {
   me: ['me'] as const,
   tree: (treeId: string, page: number) => ['trees', treeId, page] as const,
   treeAll: (treeId: string) => ['trees', treeId] as const,
+  characters: ['characters'] as const,
+  balls: ['balls'] as const,
 }
 
 export const configQuery = queryOptions({
@@ -33,3 +42,16 @@ export const createTree = (name: string) =>
   apiRequest<CreateTreeResponse>('/trees', { method: 'POST', body: { name } })
 
 export const logout = () => apiRequest<void>('/auth/logout', { method: 'POST' })
+
+/** 캐릭터 목록은 한 번 받아 FE에서 거른다 (POL-CHR-08, 09) */
+export const charactersQuery = queryOptions({
+  queryKey: queryKeys.characters,
+  queryFn: () => apiRequest<CharactersResponse>('/characters'),
+  staleTime: Infinity,
+})
+
+export const ballsQuery = queryOptions({
+  queryKey: queryKeys.balls,
+  queryFn: () => apiRequest<BallsResponse>('/balls'),
+  staleTime: Infinity,
+})

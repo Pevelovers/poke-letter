@@ -4,6 +4,7 @@ import type { BallView } from '../types'
  * 목 API용 샘플 데이터. 개발 화면 확인용으로 몇 개만 둔다.
  * 전체 목록은 저장소에 두지 않는다 (POL-IP-04). 이미지는 외부 스프라이트 URL을 그대로 쓴다 (POL-IP-03).
  */
+// ballId는 화면 확인용 예시 값이다. 실제 id는 시드가 PokéAPI에서 받는다
 const ITEM_SPRITE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items'
 
 export const mockBalls: BallView[] = [
@@ -15,7 +16,7 @@ export const mockBalls: BallView[] = [
   { ballId: 11, name: '럭셔리볼', imageUrl: `${ITEM_SPRITE}/luxury-ball.png` },
   { ballId: 6, name: '네트볼', imageUrl: `${ITEM_SPRITE}/net-ball.png` },
   { ballId: 15, name: '퀵볼', imageUrl: `${ITEM_SPRITE}/quick-ball.png` },
-  { ballId: 16, name: '다크볼', imageUrl: `${ITEM_SPRITE}/dusk-ball.png` },
+  { ballId: 13, name: '다크볼', imageUrl: `${ITEM_SPRITE}/dusk-ball.png` },
   { ballId: 14, name: '힐볼', imageUrl: `${ITEM_SPRITE}/heal-ball.png` },
   { ballId: 576, name: '드림볼', imageUrl: `${ITEM_SPRITE}/dream-ball.png` },
   { ballId: 499, name: '러브러브볼', imageUrl: `${ITEM_SPRITE}/love-ball.png` },
