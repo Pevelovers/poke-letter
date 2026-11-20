@@ -63,8 +63,13 @@ export function PokemonConfirmDialog({
               <AlertDialogTitle className="text-xl">{strings.picker.confirmTitle}</AlertDialogTitle>
             </AlertDialogHeader>
             <AlertDialogFooter className="grid grid-cols-2 gap-2">
-              <AlertDialogCancel>{strings.picker.no}</AlertDialogCancel>
-              <AlertDialogAction onClick={() => onConfirm(candidate)}>
+              <AlertDialogCancel className="h-11 font-game text-base">
+                {strings.picker.no}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="h-11 font-game text-base"
+                onClick={() => onConfirm(candidate)}
+              >
                 {strings.picker.yes}
               </AlertDialogAction>
             </AlertDialogFooter>
