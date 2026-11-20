@@ -114,6 +114,7 @@ export const strings = {
     type: '타입',
     resetFilters: '필터 초기화',
     resultCount: (count: number) => `${count}마리`,
+    starters: '세대별 스타팅 포켓몬',
     empty: '찾는 포켓몬이 없어요. 다른 이름이나 초성으로 찾아보세요.',
     selected: '선택됨',
     loadError: '목록을 불러오지 못했어요.',

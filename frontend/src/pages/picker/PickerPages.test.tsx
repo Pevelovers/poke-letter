@@ -7,6 +7,15 @@ import { useDraftStore } from '@/stores/messageDraft'
 const TREE = '/t/demoTree01/write'
 
 describe('포켓몬 선택기', () => {
+  it('검색하기 전에는 세대별 스타팅 포켓몬만 보여 준다', async () => {
+    renderRoute(`${TREE}/pokemon`)
+
+    expect(await screen.findByText('세대별 스타팅 포켓몬')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^이상해씨/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^브케인/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^피카츄/ })).not.toBeInTheDocument()
+  })
+
   it('초성으로 찾아 고르면 작성 화면으로 돌아가 고른 포켓몬을 보여 준다', async () => {
     const { router } = renderRoute(`${TREE}/pokemon`)
 
@@ -29,7 +38,7 @@ describe('포켓몬 선택기', () => {
 
     expect(await screen.findByText('3마리')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: '필터 초기화' }))
-    expect(await screen.findByText('32마리')).toBeInTheDocument()
+    expect(await screen.findByText('세대별 스타팅 포켓몬')).toBeInTheDocument()
   })
 
   it('찾는 포켓몬이 없으면 안내한다', async () => {
