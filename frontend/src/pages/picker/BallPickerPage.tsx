@@ -26,7 +26,7 @@ export function BallPickerPage({ selectedId, onSelect, onBack }: BallPickerPageP
     >
       <p className="text-sm text-muted-foreground">{strings.picker.ballDescription}</p>
       {isError && <p className="py-10 text-center">{strings.picker.loadError}</p>}
-      <ul className="grid grid-cols-4 gap-2">
+      <ul className="grid grid-cols-3 gap-2">
         {data?.balls.map((ball) => {
           const selected = ball.ballId === selectedId
           return (
@@ -47,7 +47,7 @@ export function BallPickerPage({ selectedId, onSelect, onBack }: BallPickerPageP
                   height={spriteSize.ball.height}
                   scale={2}
                 />
-                <span className="w-full truncate text-center text-xs">{ball.name}</span>
+                <span className="w-full truncate text-center font-game text-base">{ball.name}</span>
               </button>
             </li>
           )

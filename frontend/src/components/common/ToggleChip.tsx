@@ -14,7 +14,7 @@ export function ToggleChip({ label, pressed, onPressedChange }: ToggleChipProps)
       aria-pressed={pressed}
       onClick={() => onPressedChange(!pressed)}
       className={cn(
-        'h-8 shrink-0 rounded-full border px-3 text-sm transition-colors',
+        'h-9 shrink-0 rounded-full border px-3 font-game text-base transition-colors',
         pressed
           ? 'border-secondary bg-secondary text-secondary-foreground'
           : 'border-border bg-card text-foreground',
