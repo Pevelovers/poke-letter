@@ -5,9 +5,44 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * 글꼴은 두 가지로 나눈다. 분류를 바꿀 때는 아래 --font-game, --font-sans와
+ * @layer base의 규칙만 고친다.
+ * - 게임 문구 (font-game): 서비스 이름, 화면 제목, 주요 버튼, 확인 창, D-day 배지.
+ *   도트 글꼴이라 16px 이상에서만 쓴다
+ * - 일반 문구 (font-sans, 기본값): 설명, 라벨, 입력값, 안내, 작은 글씨 전부
+ */
+
+/*
+ * 게임 문구 글꼴: Pokemon DPPt (aztecwarrior28, FontStruct, CC BY-SA 3.0)
+ * https://fontstruct.com/fontstructions/show/1951915/pokemon-dppt-4
+ * 게임 글꼴을 재현한 폰트라 저장소에 커밋하지 않는다(.gitignore, POL-IP-03 취지).
+ * 파일이 없으면 일반 문구 글꼴로 보인다. 배포에 쓰려면 출처·라이선스 표기가 필요하다.
+ */
+@font-face {
+  font-family: 'Pokemon DPPt';
+  src:
+    url('/fonts-temp/pokemon-dppt.woff2') format('woff2'),
+    url('/fonts-temp/pokemon-dppt.otf') format('opentype');
+  font-display: swap;
+}
+
+/*
+ * 일반 문구 글꼴: 원스토어 모바일POP체 (눈누 배포, jsDelivr CDN)
+ * [확인 필요] 원스토어 폰트 라이선스의 웹 임베딩·출처 표기 조건
+ */
+@font-face {
+  font-family: 'OneStoreMobilePop';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff')
+    format('woff');
+  font-weight: normal;
+  font-display: swap;
+}
+
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-heading: var(--font-game);
+  --font-sans: 'OneStoreMobilePop', 'Geist Variable', sans-serif;
+  --font-game: 'Pokemon DPPt', 'OneStoreMobilePop', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +74,16 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-scene-sky-day: var(--scene-sky-day);
+  --color-scene-sky-night: var(--scene-sky-night);
+  --color-scene-snow: var(--scene-snow);
+  --color-scene-tree: var(--scene-tree);
+  --color-brand-kakao: var(--brand-kakao);
+  --color-brand-kakao-foreground: var(--brand-kakao-foreground);
+  --color-brand-naver: var(--brand-naver);
+  --color-brand-naver-foreground: var(--brand-naver-foreground);
+  --color-brand-google: var(--brand-google);
+  --color-brand-google-foreground: var(--brand-google-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,30 +94,35 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /*
+   * 테마 색. 크리스마스 색(빨강·초록·금색)을 기본으로 한다.
+   * 디자인을 바꿀 때는 이 값만 고치면 버튼·입력창·카드가 함께 바뀐다.
+   * 팔레트는 아직 확정 전이다 (docs/product/design.md "남은 결정").
+   */
+  --background: oklch(0.985 0.006 95);
+  --foreground: oklch(0.24 0.03 150);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.24 0.03 150);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.24 0.03 150);
+  --primary: oklch(0.55 0.2 25);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.45 0.11 155);
+  --secondary-foreground: oklch(0.99 0 0);
+  --muted: oklch(0.95 0.01 120);
+  --muted-foreground: oklch(0.5 0.02 150);
+  --accent: oklch(0.86 0.15 90);
+  --accent-foreground: oklch(0.3 0.06 70);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.9 0.015 120);
+  --input: oklch(0.88 0.015 120);
+  --ring: oklch(0.55 0.2 25);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -81,6 +131,20 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* 트리 장면: 이미지가 없을 때 쓰는 대체 색 */
+  --scene-sky-day: oklch(0.82 0.08 230);
+  --scene-sky-night: oklch(0.25 0.07 270);
+  --scene-snow: oklch(0.97 0.01 240);
+  --scene-tree: oklch(0.45 0.11 155);
+
+  /* 로그인 버튼: 각 제공자의 브랜드 가이드 색 */
+  --brand-kakao: #fee500;
+  --brand-kakao-foreground: rgb(0 0 0 / 85%);
+  --brand-naver: #03c75a;
+  --brand-naver-foreground: #ffffff;
+  --brand-google: #ffffff;
+  --brand-google-foreground: #1f1f1f;
 }
 
 .dark {
@@ -126,5 +190,17 @@
   }
   html {
     @apply font-sans;
+  }
+  /* 화면 제목과 대화상자 제목은 게임 문구다 */
+  h1,
+  h2 {
+    @apply font-game font-normal;
+  }
+}
+
+@layer utilities {
+  /* 도트 이미지는 정수 배율로만 키우고 픽셀이 번지지 않게 한다 (design.md §1) */
+  .pixelated {
+    image-rendering: pixelated;
   }
 }

@@ -10,33 +10,128 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MeRouteImport } from './routes/me'
+import { Route as TTreeIdIndexRouteImport } from './routes/t/$treeId/index'
+import { Route as TTreeIdSentRouteImport } from './routes/t/$treeId/sent'
+import { Route as TTreeIdWriteIndexRouteImport } from './routes/t/$treeId/write/index'
+import { Route as TTreeIdWriteBallRouteImport } from './routes/t/$treeId/write/ball'
+import { Route as TTreeIdWritePokemonRouteImport } from './routes/t/$treeId/write/pokemon'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeRoute = MeRouteImport.update({
+  id: '/me',
+  path: '/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTreeIdIndexRoute = TTreeIdIndexRouteImport.update({
+  id: '/t/$treeId/',
+  path: '/t/$treeId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTreeIdSentRoute = TTreeIdSentRouteImport.update({
+  id: '/t/$treeId/sent',
+  path: '/t/$treeId/sent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTreeIdWriteIndexRoute = TTreeIdWriteIndexRouteImport.update({
+  id: '/t/$treeId/write/',
+  path: '/t/$treeId/write/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTreeIdWriteBallRoute = TTreeIdWriteBallRouteImport.update({
+  id: '/t/$treeId/write/ball',
+  path: '/t/$treeId/write/ball',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TTreeIdWritePokemonRoute = TTreeIdWritePokemonRouteImport.update({
+  id: '/t/$treeId/write/pokemon',
+  path: '/t/$treeId/write/pokemon',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/me': typeof MeRoute
+  '/t/$treeId/sent': typeof TTreeIdSentRoute
+  '/t/$treeId/': typeof TTreeIdIndexRoute
+  '/t/$treeId/write/ball': typeof TTreeIdWriteBallRoute
+  '/t/$treeId/write/pokemon': typeof TTreeIdWritePokemonRoute
+  '/t/$treeId/write/': typeof TTreeIdWriteIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/me': typeof MeRoute
+  '/t/$treeId/sent': typeof TTreeIdSentRoute
+  '/t/$treeId': typeof TTreeIdIndexRoute
+  '/t/$treeId/write/ball': typeof TTreeIdWriteBallRoute
+  '/t/$treeId/write/pokemon': typeof TTreeIdWritePokemonRoute
+  '/t/$treeId/write': typeof TTreeIdWriteIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/me': typeof MeRoute
+  '/t/$treeId/sent': typeof TTreeIdSentRoute
+  '/t/$treeId/': typeof TTreeIdIndexRoute
+  '/t/$treeId/write/ball': typeof TTreeIdWriteBallRoute
+  '/t/$treeId/write/pokemon': typeof TTreeIdWritePokemonRoute
+  '/t/$treeId/write/': typeof TTreeIdWriteIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/me'
+    | '/t/$treeId/sent'
+    | '/t/$treeId/'
+    | '/t/$treeId/write/ball'
+    | '/t/$treeId/write/pokemon'
+    | '/t/$treeId/write/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/me'
+    | '/t/$treeId/sent'
+    | '/t/$treeId'
+    | '/t/$treeId/write/ball'
+    | '/t/$treeId/write/pokemon'
+    | '/t/$treeId/write'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/me'
+    | '/t/$treeId/sent'
+    | '/t/$treeId/'
+    | '/t/$treeId/write/ball'
+    | '/t/$treeId/write/pokemon'
+    | '/t/$treeId/write/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  MeRoute: typeof MeRoute
+  TTreeIdSentRoute: typeof TTreeIdSentRoute
+  TTreeIdIndexRoute: typeof TTreeIdIndexRoute
+  TTreeIdWriteBallRoute: typeof TTreeIdWriteBallRoute
+  TTreeIdWritePokemonRoute: typeof TTreeIdWritePokemonRoute
+  TTreeIdWriteIndexRoute: typeof TTreeIdWriteIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +143,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me': {
+      id: '/me'
+      path: '/me'
+      fullPath: '/me'
+      preLoaderRoute: typeof MeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$treeId/': {
+      id: '/t/$treeId/'
+      path: '/t/$treeId'
+      fullPath: '/t/$treeId/'
+      preLoaderRoute: typeof TTreeIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$treeId/sent': {
+      id: '/t/$treeId/sent'
+      path: '/t/$treeId/sent'
+      fullPath: '/t/$treeId/sent'
+      preLoaderRoute: typeof TTreeIdSentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$treeId/write/': {
+      id: '/t/$treeId/write/'
+      path: '/t/$treeId/write'
+      fullPath: '/t/$treeId/write/'
+      preLoaderRoute: typeof TTreeIdWriteIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$treeId/write/ball': {
+      id: '/t/$treeId/write/ball'
+      path: '/t/$treeId/write/ball'
+      fullPath: '/t/$treeId/write/ball'
+      preLoaderRoute: typeof TTreeIdWriteBallRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/t/$treeId/write/pokemon': {
+      id: '/t/$treeId/write/pokemon'
+      path: '/t/$treeId/write/pokemon'
+      fullPath: '/t/$treeId/write/pokemon'
+      preLoaderRoute: typeof TTreeIdWritePokemonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  MeRoute: MeRoute,
+  TTreeIdSentRoute: TTreeIdSentRoute,
+  TTreeIdIndexRoute: TTreeIdIndexRoute,
+  TTreeIdWriteBallRoute: TTreeIdWriteBallRoute,
+  TTreeIdWritePokemonRoute: TTreeIdWritePokemonRoute,
+  TTreeIdWriteIndexRoute: TTreeIdWriteIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
