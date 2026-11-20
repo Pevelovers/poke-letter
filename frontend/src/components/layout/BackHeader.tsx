@@ -10,7 +10,7 @@ export function BackHeader({ title, onBack }: { title: string; onBack: () => voi
       <Button variant="ghost" size="icon" onClick={onBack} aria-label={strings.common.back}>
         <ChevronLeft className="size-5" />
       </Button>
-      <h1 className="text-lg font-bold">{title}</h1>
+      <h1 className="text-xl">{title}</h1>
     </div>
   )
 }
