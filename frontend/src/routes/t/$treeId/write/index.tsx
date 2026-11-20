@@ -8,5 +8,20 @@ export const Route = createFileRoute('/t/$treeId/write/')({
 
 function WriteRoute() {
   const { treeId } = Route.useParams()
-  return <WritePage treeId={treeId} />
+  const navigate = Route.useNavigate()
+  return (
+    <WritePage
+      treeId={treeId}
+      onBack={() => void navigate({ to: '/t/$treeId', params: { treeId } })}
+      onSent={(result) =>
+        void navigate({
+          to: '/t/$treeId/sent',
+          params: { treeId },
+          search: { pokemon: result.character?.name, ball: result.ball.ballId },
+          // 뒤로 가기로 빈 작성 화면에 돌아가지 않게 한다
+          replace: true,
+        })
+      }
+    />
+  )
 }

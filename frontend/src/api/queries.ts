@@ -5,6 +5,8 @@ import type {
   AppConfigResponse,
   BallsResponse,
   CharactersResponse,
+  CreateMessageRequest,
+  CreateMessageResponse,
   CreateTreeResponse,
   MeResponse,
   TreeResponse,
@@ -55,3 +57,9 @@ export const ballsQuery = queryOptions({
   queryFn: () => apiRequest<BallsResponse>('/balls'),
   staleTime: Infinity,
 })
+
+export const createMessage = (treeId: string, request: CreateMessageRequest) =>
+  apiRequest<CreateMessageResponse>(`/trees/${treeId}/messages`, {
+    method: 'POST',
+    body: request,
+  })

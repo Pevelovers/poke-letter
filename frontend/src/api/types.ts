@@ -64,6 +64,23 @@ export interface ErrorResponse {
   fields?: Record<string, string>
 }
 
+export interface CreateMessageRequest {
+  nickname: string
+  content: string
+  characterId: number | null
+  random: boolean
+  ballId: number
+  allowMasking: boolean
+}
+
+export interface CreateMessageResponse {
+  messageId: number
+  nickname: string
+  ball: BallView
+  selectionType: 'CHOSEN' | 'RANDOM'
+  character: { characterId: number; name: string; imageUrl: string } | null
+}
+
 export type PokemonType =
   | 'normal'
   | 'fire'

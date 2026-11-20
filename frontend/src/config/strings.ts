@@ -1,3 +1,5 @@
+import { hasFinalConsonant } from '@/lib/text'
+
 /**
  * 화면 문구를 한곳에 모은다 (국제화 F-I18N 대비).
  * 컴포넌트에는 문구를 직접 쓰지 않고 여기서 가져온다.
@@ -58,11 +60,46 @@ export const strings = {
     emptyTree: '아직 장식이 없어요. 링크를 공유해 보세요!',
     lockedMessage: '12월 25일에 열려요',
   },
+  treeView: {
+    leaveMessage: '메시지 남기기',
+    full: '이 트리는 장식이 가득 찼어요',
+    manageMyTree: '내 트리 관리',
+    notFoundTitle: '트리를 찾을 수 없어요',
+    notFoundDescription: '링크가 잘못되었거나 트리가 삭제되었어요.',
+    createMine: '내 트리 만들기',
+  },
   write: {
     title: '메시지 남기기',
+    to: (treeName: string) => `${treeName}에 남기는 메시지`,
+    nickname: '닉네임',
+    nicknamePlaceholder: '트리 주인에게 보일 이름',
+    content: '메시지',
+    contentPlaceholder: '12월 25일에 열려요. 마음을 담아 적어 주세요.',
     pokemon: '포켓몬',
     choosePokemon: '포켓몬을 골라 주세요',
+    random: '랜덤으로 보내기',
+    randomDescription: '어떤 포켓몬이 갈지는 12월 25일에 함께 열려요.',
     ball: '장식 볼',
+    send: '보내기',
+    sending: '보내는 중',
+    needPokemon: '포켓몬을 고르거나 랜덤을 선택해 주세요.',
+    needNickname: '닉네임을 입력해 주세요.',
+    needContent: '메시지를 입력해 주세요.',
+    autosaved: '쓰던 내용은 이 기기에 자동 저장돼요.',
+    inappropriate: '전하기 어려운 표현이 있어요. 고쳐서 다시 보내 주세요.',
+    tooManyRequests: (seconds?: number) =>
+      seconds ? `잠시 후 다시 보내 주세요 (${seconds}초)` : '잠시 후 다시 보내 주세요.',
+    treeFull: '그사이 트리가 가득 찼어요. 쓰던 내용은 이 기기에 남아 있어요.',
+    failed: '전송하지 못했어요. 다시 시도해 주세요.',
+  },
+  sent: {
+    chosen: (pokemon: string) =>
+      `${pokemon}${hasFinalConsonant(pokemon) ? '과' : '와'} 함께 보냈어요`,
+    random: '랜덤 선물을 보냈어요',
+    description: '12월 25일에 트리 주인이 열어 볼 수 있어요.',
+    backToTree: '트리 보러 가기',
+    createMine: '나도 트리 만들기',
+    viewMine: '내 트리 보기',
   },
   picker: {
     pokemonTitle: '포켓몬 고르기',

@@ -2,6 +2,8 @@ import type {
   AppConfigResponse,
   BallsResponse,
   CharactersResponse,
+  CreateMessageRequest,
+  CreateMessageResponse,
   CreateTreeRequest,
   CreateTreeResponse,
   LoginProvider,
@@ -117,6 +119,51 @@ const routes: Array<[method: string, pattern: RegExp, handler: Handler]> = [
     'GET',
     /^\/characters$/,
     (): CharactersResponse => ({ pack: 'pokemon', characters: mockCharacters }),
+  ],
+  [
+    'POST',
+    /^\/trees\/([A-Za-z0-9]{10})\/messages$/,
+    (state, [treeId], body): CreateMessageResponse => {
+      const request = body as CreateMessageRequest
+      const tree = state.trees[treeId] ?? {
+        treeId,
+        name: '친구의 트리',
+        ownerProvider: null,
+        messages: [],
+      }
+      const ball = mockBalls.find((item) => item.ballId === request.ballId) ?? mockBalls[0]
+      const character = request.random
+        ? mockCharacters[Math.floor(Math.random() * mockCharacters.length)]
+        : mockCharacters.find((item) => item.characterId === request.characterId)
+      const message = {
+        messageId: state.nextMessageId,
+        nickname: request.nickname,
+        content: request.content,
+        characterId: character?.characterId ?? null,
+        ball,
+        createdAt: new Date().toISOString(),
+      }
+      saveMockState({
+        ...state,
+        nextMessageId: state.nextMessageId + 1,
+        trees: { ...state.trees, [treeId]: { ...tree, messages: [...tree.messages, message] } },
+      })
+      return {
+        messageId: message.messageId,
+        nickname: message.nickname,
+        ball,
+        // 랜덤이면 공개 전까지 어떤 포켓몬인지 알려 주지 않는다 (POL-CHR-04)
+        selectionType: request.random ? 'RANDOM' : 'CHOSEN',
+        character:
+          request.random || !character
+            ? null
+            : {
+                characterId: character.characterId,
+                name: character.name,
+                imageUrl: character.imageUrl,
+              },
+      }
+    },
   ],
   ['GET', /^\/balls$/, (): BallsResponse => ({ pack: 'pokemon', balls: mockBalls })],
 ]
