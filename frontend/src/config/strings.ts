@@ -54,6 +54,8 @@ export const strings = {
     share: '공유하기',
     shareTitle: (name: string) => `${name}에 메시지를 남겨 주세요`,
     copied: '링크를 복사했어요',
+    copyFailed: '복사하지 못했어요. 아래 링크를 직접 복사해 주세요.',
+    shareLink: '공유 링크',
     messageCount: (count: number) => `장식 ${count}개`,
     emptyTree: '아직 장식이 없어요. 링크를 공유해 보세요!',
     lockedMessage: '12월 25일에 열려요',
