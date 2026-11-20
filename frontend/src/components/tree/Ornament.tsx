@@ -39,7 +39,7 @@ export function Ornament({ decoration, scale, onClick }: OrnamentProps) {
           />
         )}
       </Sparkle>
-      <span className="-mt-2 max-w-24 truncate rounded-full bg-background/85 px-1.5 font-game text-base leading-5 text-foreground shadow-sm">
+      <span className="-mt-2 max-w-16 truncate rounded-full bg-background/85 px-1.5 font-game text-base leading-5 text-foreground shadow-sm">
         {decoration.nickname}
       </span>
     </>
