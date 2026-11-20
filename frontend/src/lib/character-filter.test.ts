@@ -1,6 +1,12 @@
 import { mockCharacters } from '@/api/mock/characters'
 
-import { filterCharacters, indexCharacters, type CharacterFilter } from './character-filter'
+import {
+  filterCharacters,
+  indexCharacters,
+  isEmptyFilter,
+  starterCharacters,
+  type CharacterFilter,
+} from './character-filter'
 
 const indexed = indexCharacters(mockCharacters)
 const names = (filter: Partial<CharacterFilter>) =>
@@ -31,5 +37,22 @@ describe('filterCharacters (POL-CHR-08)', () => {
 
   it('검색과 필터를 함께 쓴다', () => {
     expect(names({ query: '켄타', types: ['water'] })).toEqual(['켄타로스/paldea-aqua'])
+  })
+})
+
+describe('스타팅 포켓몬', () => {
+  it('검색어와 필터가 없을 때만 첫 화면으로 본다', () => {
+    expect(isEmptyFilter({ query: ' ', generations: [], types: [] })).toBe(true)
+    expect(isEmptyFilter({ query: '', generations: [1], types: [] })).toBe(false)
+  })
+
+  it('세대마다 3마리씩, 도감 번호순으로 고른다', () => {
+    const starters = starterCharacters(indexed)
+    expect(starters).toHaveLength(27)
+    expect(starters.slice(0, 3).map((character) => character.name)).toEqual([
+      '이상해씨',
+      '파이리',
+      '꼬부기',
+    ])
   })
 })

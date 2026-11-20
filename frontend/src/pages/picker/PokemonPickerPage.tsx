@@ -11,7 +11,12 @@ import { PageLayout } from '@/components/layout/PageLayout'
 import { Input } from '@/components/ui/input'
 import { spriteSize } from '@/config/assets'
 import { strings } from '@/config/strings'
-import { filterCharacters, indexCharacters } from '@/lib/character-filter'
+import {
+  filterCharacters,
+  indexCharacters,
+  isEmptyFilter,
+  starterCharacters,
+} from '@/lib/character-filter'
 import { cn } from '@/lib/utils'
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -36,9 +41,14 @@ export function PokemonPickerPage({ selectedId, onSelect, onBack }: PokemonPicke
 
   // 초성 문자열은 목록을 받을 때 한 번만 계산한다
   const indexed = useMemo(() => indexCharacters(data?.characters ?? []), [data])
+  // 아직 검색하지 않았으면 세대별 스타팅 포켓몬을 보여 준다
+  const showingStarters = isEmptyFilter({ query: deferredQuery, generations, types })
   const results = useMemo(
-    () => filterCharacters(indexed, { query: deferredQuery, generations, types }),
-    [indexed, deferredQuery, generations, types],
+    () =>
+      showingStarters
+        ? starterCharacters(indexed)
+        : filterCharacters(indexed, { query: deferredQuery, generations, types }),
+    [indexed, showingStarters, deferredQuery, generations, types],
   )
   // 대체 팩이면 세대·타입이 없으므로 필터를 숨긴다
   const showFilters = data?.pack === 'pokemon'
@@ -87,7 +97,12 @@ export function PokemonPickerPage({ selectedId, onSelect, onBack }: PokemonPicke
       )}
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span aria-live="polite">{data && strings.picker.resultCount(results.length)}</span>
+        <span aria-live="polite">
+          {data &&
+            (showingStarters
+              ? strings.picker.starters
+              : strings.picker.resultCount(results.length))}
+        </span>
         {(generations.length > 0 || types.length > 0) && (
           <button
             type="button"
