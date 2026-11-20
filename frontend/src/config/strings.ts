@@ -79,12 +79,10 @@ export const strings = {
     contentPlaceholder: '12월 25일에 열려요. 마음을 담아 적어 주세요.',
     pokemon: '포켓몬',
     choosePokemon: '포켓몬을 골라 주세요',
-    random: '랜덤으로 보내기',
-    randomDescription: '어떤 포켓몬이 갈지는 12월 25일에 함께 열려요.',
     ball: '장식 볼',
     send: '보내기',
     sending: '보내는 중',
-    needPokemon: '포켓몬을 고르거나 랜덤을 선택해 주세요.',
+    needPokemon: '포켓몬을 골라 주세요.',
     needNickname: '닉네임을 입력해 주세요.',
     needContent: '메시지를 입력해 주세요.',
     autosaved: '쓰던 내용은 이 기기에 자동 저장돼요.',
@@ -97,7 +95,8 @@ export const strings = {
   sent: {
     chosen: (pokemon: string) =>
       `${pokemon}${hasFinalConsonant(pokemon) ? '과' : '와'} 함께 보냈어요`,
-    random: '랜덤 선물을 보냈어요',
+    done: '메시지를 보냈어요',
+    shiny: '반짝이는 이로치와 함께예요!',
     description: '12월 25일에 트리 주인이 열어 볼 수 있어요.',
     backToTree: '트리 보러 가기',
     createMine: '나도 트리 만들기',

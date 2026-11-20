@@ -17,7 +17,11 @@ function WriteRoute() {
         void navigate({
           to: '/t/$treeId/sent',
           params: { treeId },
-          search: { pokemon: result.character?.name, ball: result.ball.ballId },
+          search: {
+            pokemon: result.character.name,
+            shiny: result.shiny || undefined,
+            ball: result.ball.ballId,
+          },
           // 뒤로 가기로 빈 작성 화면에 돌아가지 않게 한다
           replace: true,
         })

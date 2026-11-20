@@ -38,12 +38,12 @@ export function WritePage({ treeId, onBack, onSent }: WritePageProps) {
   const [rejected, setRejected] = useState<{ nickname: string; content: string } | null>(null)
 
   const mutation = useMutation({
-    mutationFn: (allowMasking: boolean) =>
+    mutationFn: ({ characterId, allowMasking }: { characterId: number; allowMasking: boolean }) =>
       createMessage(treeId, {
         nickname: draft.nickname.trim(),
         content: draft.content,
-        characterId: draft.random ? null : draft.characterId,
-        random: draft.random,
+        characterId,
+        shiny: draft.shiny,
         ballId: draft.ballId,
         allowMasking,
       }),
@@ -67,7 +67,7 @@ export function WritePage({ treeId, onBack, onSent }: WritePageProps) {
     },
   })
 
-  const pokemonMissing = !draft.random && draft.characterId === null
+  const pokemonMissing = draft.characterId === null
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -76,7 +76,7 @@ export function WritePage({ treeId, onBack, onSent }: WritePageProps) {
       content: draft.content.trim() === '' ? strings.write.needContent : undefined,
     }
     setFieldErrors(errors)
-    if (errors.nickname || errors.content || pokemonMissing) return
+    if (errors.nickname || errors.content || draft.characterId === null) return
 
     // 거절된 내용을 고치지 않고 다시 누르면 서버에 보내지 않고 막는다
     if (rejected && rejected.nickname === draft.nickname && rejected.content === draft.content) {
@@ -85,7 +85,7 @@ export function WritePage({ treeId, onBack, onSent }: WritePageProps) {
     }
     setFormError(undefined)
     // 거절된 뒤 고친 내용은 마스킹해서라도 보낸다
-    mutation.mutate(rejected !== null)
+    mutation.mutate({ characterId: draft.characterId, allowMasking: rejected !== null })
   }
 
   return (
@@ -112,19 +112,6 @@ export function WritePage({ treeId, onBack, onSent }: WritePageProps) {
           maxLength={CONTENT_MAX}
           error={fieldErrors.content}
         />
-
-        <label className="flex items-start gap-3 rounded-xl border border-border bg-card p-4">
-          <input
-            type="checkbox"
-            checked={draft.random}
-            onChange={(event) => update(treeId, { random: event.target.checked })}
-            className="mt-0.5 size-5 accent-primary"
-          />
-          <span className="flex flex-col gap-0.5">
-            <span className="font-medium">{strings.write.random}</span>
-            <span className="text-sm text-muted-foreground">{strings.write.randomDescription}</span>
-          </span>
-        </label>
 
         <SelectionSummary treeId={treeId} draft={draft} />
 

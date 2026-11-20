@@ -2,6 +2,7 @@ import type {
   AppConfigResponse,
   BallsResponse,
   CharactersResponse,
+  CharacterView,
   CreateMessageRequest,
   CreateMessageResponse,
   CreateTreeRequest,
@@ -12,7 +13,14 @@ import type {
 } from '../types'
 import { mockCharacters } from './characters'
 import { mockBalls } from './fixtures'
-import { findOwnedTree, loadMockState, saveMockState, type MockState } from './db'
+import {
+  findOwnedTree,
+  isMockRevealed,
+  loadMockState,
+  saveMockState,
+  type MockMessage,
+  type MockState,
+} from './db'
 
 /**
  * 백엔드가 준비되기 전에 쓰는 목 API.
@@ -96,20 +104,24 @@ const routes: Array<[method: string, pattern: RegExp, handler: Handler]> = [
       }
       const page = Number(query.get('page') ?? 0)
       const totalPages = Math.max(1, Math.ceil(tree.messages.length / PAGE_SIZE))
+      const revealed = isMockRevealed(REVEAL_AT)
       return {
         treeId: tree.treeId,
         name: tree.name,
         isOwner: tree.ownerProvider !== null && tree.ownerProvider === state.provider,
-        revealed: Date.now() >= Date.parse(REVEAL_AT),
+        revealed,
         messageCount: tree.messages.length,
         full: tree.messages.length >= MAX_MESSAGES,
         decorations: tree.messages
           .slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-          .map(({ messageId, nickname, ball, createdAt }) => ({
-            messageId,
-            nickname,
-            ball,
-            createdAt,
+          .map((message) => ({
+            messageId: message.messageId,
+            nickname: message.nickname,
+            ball: message.ball,
+            shiny: message.shiny,
+            // 공개 전에는 어떤 포켓몬인지 내려주지 않는다 (POL-RVL-01)
+            character: revealed ? characterView(message) : null,
+            createdAt: message.createdAt,
           })),
         page: { number: page, size: PAGE_SIZE, totalPages },
       }
@@ -132,14 +144,12 @@ const routes: Array<[method: string, pattern: RegExp, handler: Handler]> = [
         messages: [],
       }
       const ball = mockBalls.find((item) => item.ballId === request.ballId) ?? mockBalls[0]
-      const character = request.random
-        ? mockCharacters[Math.floor(Math.random() * mockCharacters.length)]
-        : mockCharacters.find((item) => item.characterId === request.characterId)
-      const message = {
+      const message: MockMessage = {
         messageId: state.nextMessageId,
         nickname: request.nickname,
         content: request.content,
-        characterId: character?.characterId ?? null,
+        characterId: request.characterId,
+        shiny: request.shiny,
         ball,
         createdAt: new Date().toISOString(),
       }
@@ -152,16 +162,8 @@ const routes: Array<[method: string, pattern: RegExp, handler: Handler]> = [
         messageId: message.messageId,
         nickname: message.nickname,
         ball,
-        // 랜덤이면 공개 전까지 어떤 포켓몬인지 알려 주지 않는다 (POL-CHR-04)
-        selectionType: request.random ? 'RANDOM' : 'CHOSEN',
-        character:
-          request.random || !character
-            ? null
-            : {
-                characterId: character.characterId,
-                name: character.name,
-                imageUrl: character.imageUrl,
-              },
+        shiny: message.shiny,
+        character: characterView(message),
       }
     },
   ],
@@ -194,4 +196,14 @@ function randomTreeId(): string {
 
 function shareUrl(treeId: string): string {
   return `${window.location.origin}/t/${treeId}`
+}
+
+function characterView({ characterId, shiny }: MockMessage): CharacterView {
+  const character =
+    mockCharacters.find((item) => item.characterId === characterId) ?? mockCharacters[0]
+  return {
+    characterId: character.characterId,
+    name: character.name,
+    imageUrl: shiny ? character.shinyImageUrl : character.imageUrl,
+  }
 }

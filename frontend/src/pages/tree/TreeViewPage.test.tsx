@@ -21,6 +21,25 @@ describe('TreeViewPage', () => {
     expect(await screen.findByText(/12월 25일에 열려요 · D-/)).toBeInTheDocument()
   })
 
+  it('공개 전에는 볼만 달고, 이로치가 든 볼은 반짝인다', async () => {
+    renderRoute('/t/demoTree01')
+
+    const shinyOrnament = await screen.findByLabelText('피카츄친구의 장식 (이로치)')
+    expect(shinyOrnament.querySelector('[data-shiny="true"]')).not.toBeNull()
+    expect(screen.getByLabelText('이슬의 장식').querySelector('[data-shiny="true"]')).toBeNull()
+    expect(screen.queryByRole('img', { name: '이상해씨' })).not.toBeInTheDocument()
+  })
+
+  it('공개 후에는 볼 대신 포켓몬을 달고, 이로치는 이로치 이미지로 보여 준다', async () => {
+    localStorage.setItem('pokeletter:mock-revealed', 'true')
+    renderRoute('/t/demoTree01')
+
+    expect(await screen.findByRole('img', { name: '이상해씨' })).toBeInTheDocument()
+    const shiny = screen.getByLabelText('피카츄친구의 장식 (이로치)').querySelector('img')
+    expect(shiny).toHaveAttribute('src', expect.stringContaining('/shiny/'))
+    expect(screen.queryByRole('img', { name: '몬스터볼' })).not.toBeInTheDocument()
+  })
+
   it('가득 찬 트리는 버튼 대신 안내를 보여 준다', async () => {
     const original = client.apiRequest
     vi.spyOn(client, 'apiRequest').mockImplementation(async (path, options) => {

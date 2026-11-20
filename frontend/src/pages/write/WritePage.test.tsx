@@ -26,18 +26,13 @@ function interceptSend(handler: (body: unknown) => Promise<unknown>) {
 describe('WritePage', () => {
   afterEach(() => vi.restoreAllMocks())
 
-  it('포켓몬을 고르지 않으면 보내기가 비활성되고, 랜덤을 고르면 활성된다', async () => {
+  it('포켓몬을 고르지 않으면 보내기가 비활성되고, 랜덤으로 보내기 체크는 없다', async () => {
     renderRoute(WRITE)
 
     const send = await screen.findByRole('button', { name: '보내기' })
     expect(send).toBeDisabled()
-    expect(screen.getByText('포켓몬을 고르거나 랜덤을 선택해 주세요.')).toBeInTheDocument()
-
-    await userEvent.click(screen.getByRole('checkbox', { name: /랜덤으로 보내기/ }))
-
-    expect(send).toBeEnabled()
-    // 랜덤이면 포켓몬 선택 칸을 숨긴다
-    expect(screen.queryByRole('link', { name: /포켓몬을 골라 주세요/ })).not.toBeInTheDocument()
+    expect(screen.getByText('포켓몬을 골라 주세요.')).toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
   })
 
   it('쓰던 내용을 복구하고, 보내면 완료 화면으로 가며 임시 저장을 지운다', async () => {
@@ -55,17 +50,28 @@ describe('WritePage', () => {
     expect(useDraftStore.getState().drafts[TREE_ID]).toBeUndefined()
   })
 
-  it('랜덤으로 보내면 랜덤 선물 문구를 보여 준다', async () => {
-    setDraft({ nickname: '웅이', content: '안녕', random: true })
+  it('이로치를 고르면 shiny로 보내고 완료 화면에 이로치를 알린다', async () => {
+    setDraft({ nickname: '웅이', content: '안녕', characterId: 2500, shiny: true })
+    const bodies: unknown[] = []
+    const original = client.apiRequest
+    vi.spyOn(client, 'apiRequest').mockImplementation((path, options) => {
+      if (path.endsWith('/messages')) bodies.push(options?.body)
+      return original(path, options)
+    })
     renderRoute(WRITE)
 
     await userEvent.click(await screen.findByRole('button', { name: '보내기' }))
 
-    expect(await screen.findByRole('heading', { name: '랜덤 선물을 보냈어요' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { name: '피카츄와 함께 보냈어요' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('반짝이는 이로치와 함께예요!')).toBeInTheDocument()
+    expect(bodies[0]).toEqual(expect.objectContaining({ characterId: 2500, shiny: true }))
+    expect(bodies[0]).not.toHaveProperty('random')
   })
 
   it('닉네임과 내용이 비어 있으면 보내지 않는다', async () => {
-    setDraft({ random: true })
+    setDraft({ characterId: 2500 })
     const send = interceptSend(async () => ({}))
     renderRoute(WRITE)
 
@@ -77,7 +83,7 @@ describe('WritePage', () => {
   })
 
   it('욕설로 거절되면 같은 내용은 다시 보내지 않고, 고치면 마스킹 허용으로 보낸다 (POL-FLT-07)', async () => {
-    setDraft({ nickname: '로켓단', content: '나쁜 말', random: true })
+    setDraft({ nickname: '로켓단', content: '나쁜 말', characterId: 2500 })
     const bodies: unknown[] = []
     interceptSend(async (body) => {
       bodies.push(body)
@@ -88,8 +94,8 @@ describe('WritePage', () => {
         messageId: 1,
         nickname: '로켓단',
         ball: { ballId: 4, name: '몬스터볼', imageUrl: '' },
-        selectionType: 'RANDOM',
-        character: null,
+        shiny: false,
+        character: { characterId: 2500, name: '피카츄', imageUrl: '' },
       }
     })
     renderRoute(WRITE)
@@ -109,7 +115,7 @@ describe('WritePage', () => {
   })
 
   it('너무 자주 보내면 남은 시간을 안내하고 쓰던 내용을 남긴다', async () => {
-    setDraft({ nickname: '로켓단', content: '또 보냄', random: true })
+    setDraft({ nickname: '로켓단', content: '또 보냄', characterId: 2500 })
     interceptSend(async () => {
       throw new ApiError(429, { code: 'TOO_MANY_REQUESTS', message: '' }, 42)
     })

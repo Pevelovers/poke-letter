@@ -12,11 +12,12 @@ interface SentPageProps {
   treeId: string
   /** 직접 고른 포켓몬 이름. 랜덤이면 없음 */
   pokemon?: string
+  shiny?: boolean
   ballId?: number
 }
 
 /** 전송 완료 (F-MSG-05, F-MSG-10). 다음 트리 주인을 만드는 입구다 (US-03a) */
-export function SentPage({ treeId, pokemon, ballId }: SentPageProps) {
+export function SentPage({ treeId, pokemon, shiny = false, ballId }: SentPageProps) {
   const { data: balls } = useQuery(ballsQuery)
   // 작성자는 보통 로그인하지 않았으므로 실패(401)해도 조용히 넘어간다
   const { data: me } = useQuery(meQuery)
@@ -35,8 +36,9 @@ export function SentPage({ treeId, pokemon, ballId }: SentPageProps) {
         />
       )}
       <h1 className="text-xl font-bold">
-        {pokemon ? strings.sent.chosen(pokemon) : strings.sent.random}
+        {pokemon ? strings.sent.chosen(pokemon) : strings.sent.done}
       </h1>
+      {shiny && <p className="font-semibold text-accent-foreground">{strings.sent.shiny}</p>}
       <p className="text-muted-foreground">{strings.sent.description}</p>
 
       <div className="mt-6 flex w-full flex-col gap-2">

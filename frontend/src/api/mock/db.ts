@@ -1,4 +1,5 @@
 import type { BallView, LoginProvider } from '../types'
+import { mockCharacters } from './characters'
 import { DEMO_TREE_ID, mockBalls, mockNicknames } from './fixtures'
 
 /** 목 서버의 저장 상태. 새로고침해도 이어지도록 로컬스토리지에 둔다 */
@@ -6,7 +7,8 @@ export interface MockMessage {
   messageId: number
   nickname: string
   content: string
-  characterId: number | null
+  characterId: number
+  shiny: boolean
   ball: BallView
   createdAt: string
 }
@@ -24,7 +26,8 @@ export interface MockState {
   nextMessageId: number
 }
 
-const STORAGE_KEY = 'pokeletter:mock-db'
+// 저장 형식이 바뀌면 이름을 바꿔 예전 목 데이터를 버린다
+const STORAGE_KEY = 'pokeletter:mock-db-v2'
 
 function demoTree(): MockTree {
   const start = Date.parse('2026-12-01T09:00:00+09:00')
@@ -36,7 +39,9 @@ function demoTree(): MockTree {
       messageId: index + 1,
       nickname,
       content: '메리 크리스마스!',
-      characterId: null,
+      characterId: mockCharacters[(index * 7) % mockCharacters.length].characterId,
+      // 반짝임을 확인할 수 있게 두 개는 이로치로 둔다
+      shiny: index === 2 || index === 7,
       ball: mockBalls[index % mockBalls.length],
       createdAt: new Date(start + index * 3_600_000).toISOString(),
     })),
@@ -86,4 +91,17 @@ export function resetMockState() {
 export function findOwnedTree(state: MockState): MockTree | undefined {
   if (!state.provider) return undefined
   return Object.values(state.trees).find((tree) => tree.ownerProvider === state.provider)
+}
+
+/**
+ * 목 모드에서 공개 후 화면을 미리 보려면 개발자 도구 콘솔에서
+ * `localStorage.setItem('pokeletter:mock-revealed', 'true')` 후 새로고침한다.
+ */
+export function isMockRevealed(revealAt: string): boolean {
+  try {
+    if (localStorage.getItem('pokeletter:mock-revealed') === 'true') return true
+  } catch {
+    // 무시
+  }
+  return Date.now() >= Date.parse(revealAt)
 }
