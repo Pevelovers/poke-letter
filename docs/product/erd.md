@@ -1,6 +1,7 @@
 # ERD
 
-> 버전 1.0 · 2026-11-18 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
+> 버전 1.1 · 2026-11-20 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
+> 2026-11-20 개정 (#38): 숨김 랜덤을 없애고 선택기의 랜덤 선택 버튼으로 바꿈, 선택 확인 창, 이로치 2%, 공개 전 이로치 볼 반짝임, 공개 후 트리에 포켓몬 표시
 > 근거: [기능 정의서](features.md), [정책 정의서](policies.md) · DBMS: **MySQL 8.0.16 이상** (운영은 배포 인프라 제공, 로컬·테스트는 MySQL 8.4 LTS). 2026-11-19 PostgreSQL에서 전환 (#33)
 
 ## 다이어그램
@@ -31,7 +32,7 @@ erDiagram
         varchar nickname "1~10자, 마스킹 후"
         varchar content "1~500자, 마스킹 후"
         int character_id FK
-        varchar selection_type "CHOSEN | RANDOM"
+        boolean shiny "이로치 당첨"
         int ball_id FK
         datetime created_at "UTC"
     }
@@ -45,6 +46,7 @@ erDiagram
         varchar type1
         varchar type2 "nullable"
         varchar image_url
+        varchar shiny_image_url "nullable"
         int sort_order
         boolean active
     }
@@ -91,12 +93,14 @@ erDiagram
 | nickname | `varchar(10)` | NOT NULL | 마스킹 후 (POL-MSG-02) |
 | content | `varchar(500)` | NOT NULL | 마스킹 후, 일반 텍스트 (POL-MSG-01, 07) |
 | character_id | `integer` | NOT NULL, FK → characters.id | 포켓몬 팩의 행을 가리킨다 (POL-CHR-02) |
-| selection_type | `varchar(10)` | NOT NULL, CHECK (`CHOSEN`,`RANDOM`) | 작성자 화면 표시에 쓴다 (POL-CHR-04) |
-| ball_id | `integer` | NOT NULL, FK → balls.id | 장식으로 달리는 볼. **작성자가 고른다** (기본값 몬스터볼). 12/25 전에도 트리에 보인다 |
+| shiny | `boolean` | NOT NULL, default `false` | 이로치 당첨 (POL-CHR-12). 공개 전에도 트리에 반짝임으로 보인다. **V2에서 추가** |
+| ball_id | `integer` | NOT NULL, FK → balls.id | 장식으로 달리는 볼. **작성자가 고른다** (기본값 몬스터볼). 12/25 전에 트리에 보인다 |
+
+- `selection_type`(직접/랜덤)은 숨김 랜덤을 없애며 V2에서 삭제한다 (POL-CHR-04, 2026-11-20)
 | created_at | `datetime(6)` | NOT NULL, default `CURRENT_TIMESTAMP(6)`, UTC | 장식 배치 순서 (POL-TRE-04) |
 
 - INDEX (`tree_id`, `created_at`) — 트리 화면 조회와 페이지 넘김
-- INDEX (`tree_id`, `character_id`) — 랜덤 후보 계산과 모아보기 집계
+- INDEX (`tree_id`, `character_id`) — 모아보기 집계
 - 삭제는 행 삭제(hard delete)다 (POL-MSG-06)
 - MySQL `utf8mb4`의 `varchar(n)`은 글자 수 기준이라 한글·이모지 길이 제한과 맞는다. 앱에서도 같은 기준으로 검증한다
 - MySQL 기본 콜레이션(`utf8mb4_0900_ai_ci`)은 대소문자를 구분하지 않는다. 대소문자가 다른 값을 구분해야 하는 컬럼(공유 ID, 제공자 고유 ID, 볼 아이템 키)은 `utf8mb4_bin`으로 둔다
@@ -112,6 +116,7 @@ erDiagram
 | form | `varchar(20)` | NOT NULL, default `base` | `base`, `alola`, `galar`, `hisui`, `paldea` (POL-CHR-01). 한 지역에 폼이 여럿이면 접미사로 구분한다: 팔데아 켄타로스 `paldea-combat`, `paldea-blaze`, `paldea-aqua` |
 | name_ko | `varchar(50)` | NOT NULL | 화면 이름. **리전폼도 원래 이름 그대로** (알로라 라이츄 → `라이츄`, 팔데아 켄타로스 3종 → `켄타로스`). 구분은 `form`으로만 한다 (POL-CHR-06) |
 | image_url | `varchar(500)` | NOT NULL | 외부 스프라이트 URL (A-09) |
+| shiny_image_url | `varchar(500)` | NULL | 이로치 스프라이트 URL (`front_shiny`). 없으면 NULL이고 `image_url`을 쓴다 (POL-CHR-12). **V2에서 추가** |
 | generation | `smallint` | NOT NULL, CHECK 1~9 | 폼이 처음 나온 세대 (POL-CHR-07). 알로라 라이츄 = 7 |
 | type1 | `varchar(10)` | NOT NULL | 첫 번째 타입. PokéAPI 영문 이름 (`electric` 등) |
 | type2 | `varchar(10)` | NULL | 두 번째 타입. 단일 타입이면 NULL |
@@ -163,27 +168,20 @@ erDiagram
 ## 주요 쿼리
 
 ```sql
--- 랜덤 후보 (POL-CHR-03): 이 트리가 받지 않은 활성 캐릭터
-SELECT c.id FROM characters c
-WHERE c.pack = 'pokemon' AND c.active
-  AND NOT EXISTS (SELECT 1 FROM messages m WHERE m.tree_id = :treeId AND m.character_id = c.id)
-ORDER BY RAND() LIMIT 1;
--- 결과가 없으면 조건 없이 전체에서 다시 뽑는다
-
--- 받은 포켓몬 모아보기 (POL-CHR-05)
-SELECT character_id, count(*) AS times, min(created_at) AS first_received
+-- 받은 포켓몬 모아보기 (POL-CHR-05). 이로치는 따로 묶는다 (POL-CHR-12)
+SELECT character_id, shiny, count(*) AS times, min(created_at) AS first_received
 FROM messages WHERE tree_id = :treeId
-GROUP BY character_id ORDER BY first_received;
+GROUP BY character_id, shiny ORDER BY first_received;
 ```
 
-- 캐릭터가 약 1,100행이라 `ORDER BY RAND()`로도 충분하다고 본다 (추정)
-- 동시에 랜덤을 두 번 보내면 같은 포켓몬이 나올 수 있다. 정책상 문제없다고 보고 잠금은 걸지 않는다
+- 랜덤 선택은 FE가 하므로 서버의 랜덤 후보 쿼리는 없다 (POL-CHR-03, 2026-11-20)
 
 ## 마이그레이션 계획
 
 | 파일 | 내용 |
 |---|---|
 | `V1__create_users_trees_characters_messages.sql` | 위 5개 테이블(users, trees, characters, balls, messages), 제약, 인덱스 |
+| `V2__add_shiny_drop_selection_type.sql` | `characters.shiny_image_url` 추가, `messages.shiny` 추가, `messages.selection_type`과 그 CHECK 삭제 (#38) |
 | (시드) `scripts/seed-characters` | PokéAPI → characters, balls. 배포 환경에서 1회 실행, 다시 실행해도 같은 결과(idempotent). 세대는 `pokemon-form` → `version_group` → `generation`, 타입은 `pokemon.types`에서 받는다 (POL-CHR-07) |
 
 ## 용량 추정
