@@ -251,3 +251,6 @@ generated/
 *.h2.db
 *.mv.db
 *.trace.db
+
+# AI로 만든 임시 이미지 (디자인 확정 전 임시본, 커밋하지 않음)
+frontend/public/art-temp/
