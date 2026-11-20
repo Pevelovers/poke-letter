@@ -3,6 +3,7 @@ import { PixelImage } from '@/components/common/PixelImage'
 import { Sparkle } from '@/components/common/Sparkle'
 import { spriteSize } from '@/config/assets'
 import { strings } from '@/config/strings'
+import { cn } from '@/lib/utils'
 
 interface OrnamentProps {
   decoration: Decoration
@@ -14,7 +15,7 @@ interface OrnamentProps {
 const HIT_BOX = 48
 
 /**
- * 트리에 달린 장식 하나. 닉네임은 화면에 그리지 않고 읽기 프로그램용 이름(aria-label)에만 둔다.
+ * 트리에 달린 장식 하나와 보낸 사람 닉네임.
  * 공개 전에는 볼(이로치가 들었으면 반짝임), 공개 후에는 볼 대신 포켓몬을 단다 (POL-RVL-03, POL-CHR-12).
  */
 export function Ornament({ decoration, scale, onClick }: OrnamentProps) {
@@ -47,6 +48,18 @@ export function Ornament({ decoration, scale, onClick }: OrnamentProps) {
           />
         )}
       </Sparkle>
+      {/*
+        닉네임은 최대 10자(POL-MSG-02)라 줄이지 않고 한 줄로 다 보여 준다.
+        배경을 옅게 해 뒤의 포켓몬이 비치게 하고, 포켓몬은 그림 발밑 아래로 내려 덜 가린다.
+      */}
+      <span
+        className={cn(
+          'relative z-10 rounded-full bg-background/45 px-1.5 font-game text-base leading-5 whitespace-nowrap text-foreground',
+          character ? 'mt-1' : '-mt-2',
+        )}
+      >
+        {decoration.nickname}
+      </span>
     </>
   )
 
