@@ -14,7 +14,7 @@ interface OrnamentProps {
 const HIT_BOX = 48
 
 /**
- * 트리에 달린 장식 하나와 보낸 사람 닉네임.
+ * 트리에 달린 장식 하나. 닉네임은 화면에 그리지 않고 읽기 프로그램용 이름(aria-label)에만 둔다.
  * 공개 전에는 볼(이로치가 들었으면 반짝임), 공개 후에는 볼 대신 포켓몬을 단다 (POL-RVL-03, POL-CHR-12).
  */
 export function Ornament({ decoration, scale, onClick }: OrnamentProps) {
@@ -33,6 +33,7 @@ export function Ornament({ decoration, scale, onClick }: OrnamentProps) {
               width={spriteSize.pokemon.width}
               height={spriteSize.pokemon.height}
               scale={1}
+              smooth
               className="pointer-events-none absolute top-1/2 left-1/2 max-w-none -translate-1/2"
             />
           </span>
@@ -46,9 +47,6 @@ export function Ornament({ decoration, scale, onClick }: OrnamentProps) {
           />
         )}
       </Sparkle>
-      <span className="relative z-10 -mt-2 max-w-16 truncate rounded-full bg-background/85 px-1.5 font-game text-base leading-5 text-foreground shadow-sm">
-        {decoration.nickname}
-      </span>
     </>
   )
 
