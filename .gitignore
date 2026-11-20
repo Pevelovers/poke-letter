@@ -254,3 +254,6 @@ generated/
 
 # AI로 만든 임시 이미지 (디자인 확정 전 임시본, 커밋하지 않음)
 frontend/public/art-temp/
+
+# 게임 글꼴을 재현한 임시 폰트 (라이선스 동의 후 각자 받아 넣음, 커밋하지 않음)
+frontend/public/fonts-temp/
