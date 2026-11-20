@@ -35,10 +35,8 @@ export function SentPage({ treeId, pokemon, shiny = false, ballId }: SentPagePro
           className="animate-bounce"
         />
       )}
-      <h1 className="text-xl font-bold">
-        {pokemon ? strings.sent.chosen(pokemon) : strings.sent.done}
-      </h1>
-      {shiny && <p className="font-semibold text-accent-foreground">{strings.sent.shiny}</p>}
+      <h1 className="text-xl">{pokemon ? strings.sent.chosen(pokemon) : strings.sent.done}</h1>
+      {shiny && <p className="font-game text-base text-accent-foreground">{strings.sent.shiny}</p>}
       <p className="text-muted-foreground">{strings.sent.description}</p>
 
       <div className="mt-6 flex w-full flex-col gap-2">

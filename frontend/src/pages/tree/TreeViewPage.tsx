@@ -43,7 +43,7 @@ export function TreeViewPage({ treeId }: { treeId: string }) {
       {tree.data && (
         <>
           <section className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-2xl font-bold">{tree.data.name}</h1>
+            <h1 className="text-2xl">{tree.data.name}</h1>
             {config && (
               <RevealBadge revealAt={config.revealAt} revealed={tree.data.revealed} now={now} />
             )}
@@ -77,7 +77,7 @@ export function TreeViewPage({ treeId }: { treeId: string }) {
 function TreeNotFound() {
   return (
     <PageLayout className="items-center justify-center gap-3 text-center">
-      <h1 className="text-xl font-bold">{strings.treeView.notFoundTitle}</h1>
+      <h1 className="text-xl">{strings.treeView.notFoundTitle}</h1>
       <p className="text-muted-foreground">{strings.treeView.notFoundDescription}</p>
       <ActionButton asChild className="mt-4">
         <Link to="/login">{strings.treeView.createMine}</Link>
