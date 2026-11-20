@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
+import { BrandName } from '@/components/common/BrandName'
 import { cn } from '@/lib/utils'
-import { strings } from '@/config/strings'
 
 import { NoticeFooter } from './NoticeFooter'
 
@@ -34,8 +34,8 @@ export function PageLayout({
         {!hideHeader && (
           <header className="flex h-14 items-center justify-between px-4">
             {headerLeft ?? (
-              <Link to="/" className="font-game text-xl text-primary">
-                {strings.appName}
+              <Link to="/" className="text-xl text-primary">
+                <BrandName />
               </Link>
             )}
             <div className="flex items-center gap-1">{headerRight}</div>

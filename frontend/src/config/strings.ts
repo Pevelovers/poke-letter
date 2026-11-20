@@ -5,6 +5,7 @@ import { hasFinalConsonant } from '@/lib/text'
  * 컴포넌트에는 문구를 직접 쓰지 않고 여기서 가져온다.
  */
 export const strings = {
+  /** 서비스 이름. 화면에는 BrandName으로 그린다. 다른 문구에서는 `{brand}` 자리로 쓴다 */
   appName: 'PokéLetter',
   common: {
     loading: '불러오는 중이에요',
@@ -18,7 +19,7 @@ export const strings = {
   notice: {
     title: '비공식 팬 프로젝트',
     lines: [
-      'PokéLetter는 비공식 팬 프로젝트이며 공식 서비스와 관련이 없어요.',
+      '{brand}는 비공식 팬 프로젝트이며 공식 서비스와 관련이 없어요.',
       '포켓몬 관련 명칭과 이미지의 권리는 각 권리자에게 있어요.',
       '비상업적으로 운영해요.',
     ],
