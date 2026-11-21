@@ -1,0 +1,1614 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>트리 장식 에디터 · PokéLetter</title>
+    <style>
+      @font-face {
+        font-family: 'Pokemon DPPt';
+        src: url(/fonts-temp/pokemon-dppt.woff2) format('woff2');
+      }
+      :root {
+        --bg: #f6f5f2;
+        --card: #fff;
+        --fg: #1d1d1f;
+        --muted: #6b6b70;
+        --line: #e2e0da;
+        --accent: #d6453d;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #141416;
+          --card: #1e1e22;
+          --fg: #ececef;
+          --muted: #9a9aa2;
+          --line: #2e2e34;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        overflow-x: hidden;
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.5 system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 12px 16px 32px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
+      }
+      h1 {
+        font-size: 17px;
+        margin: 0;
+        width: 100%;
+      }
+      /* 토글 */
+      .seg {
+        display: flex;
+        width: 100%;
+        max-width: 360px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px;
+      }
+      .seg button {
+        flex: 1;
+        border: 0;
+        background: none;
+        color: var(--muted);
+        padding: 8px 0;
+        border-radius: 999px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .seg button[aria-pressed='true'] {
+        background: var(--accent);
+        color: #fff;
+      }
+      /* 장면 (앱 TreeScene과 같은 치수) */
+      .scene {
+        position: relative;
+        width: 360px;
+        max-width: 100%;
+        height: 440px;
+        border-radius: 16px;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        background: #9fd3f0 url(/art-temp/bg-day.png) center bottom / 360px 640px repeat-x;
+        image-rendering: pixelated;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      /* 트리 장면은 좌우 여백 없이 화면 폭을 꽉 채운다 (모바일). 넓은 화면에서는 앱 최대 폭(448px)으로 */
+      .scene {
+        width: 100vw;
+        max-width: none;
+        margin: 0 calc(50% - 50vw);
+        border-radius: 0;
+        background-size: auto 640px;
+      }
+      @media (min-width: 520px) {
+        .scene {
+          width: 448px;
+          margin: 0;
+          border-radius: 16px;
+        }
+      }
+      body.night .scene {
+        background-color: #1b2140;
+        background-image: url(/art-temp/bg-night.png);
+      }
+      .snow {
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 64px;
+        background: #ffffff99;
+      }
+      .tree {
+        position: relative;
+        width: 300px;
+        height: 360px;
+        margin-bottom: 32px;
+        flex: none;
+      }
+      .tree > img,
+      .tree > .art {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        image-rendering: pixelated;
+        pointer-events: none;
+      }
+      .tree > img,
+      .tree > .art {
+        filter: var(--tree-filter, none);
+        opacity: var(--tree-opa, 1);
+      }
+      .hit img {
+        filter: var(--orn-outline, none);
+      }
+      .hit::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: var(--halo-size, 0);
+        height: var(--halo-size, 0);
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: var(--halo, transparent);
+        pointer-events: none;
+      }
+      .tree > .art {
+        background-repeat: no-repeat;
+        animation: snow var(--dur, 2.7s) steps(27) infinite;
+      }
+      @keyframes snow {
+        from {
+          background-position: 0 0;
+        }
+        to {
+          background-position: var(--end) 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .tree > .art {
+          animation: none;
+        }
+      }
+      body.paused .tree > .art {
+        animation-play-state: paused;
+      }
+      /* 함께 지내는 포켓몬: 트리 그림 위, 장식 아래에 그린다. 장면 폭 전체를 쓴다 */
+      .walkers {
+        position: absolute;
+        top: 0;
+        height: 100%;
+        pointer-events: none;
+      }
+      .walkers.back {
+        z-index: 0;
+      } /* 트리 그림보다 먼저 그려 뒤에 보인다 */
+      .walkers.front {
+        z-index: 20;
+      } /* 트리·장식보다 앞 */
+      .walker {
+        position: absolute;
+        left: 0;
+        top: 0;
+        will-change: transform;
+      }
+      .walker .body {
+        display: block;
+        transform-origin: 50% 78%;
+        will-change: transform;
+      }
+      .walker img {
+        display: block;
+        image-rendering: auto;
+        filter: var(--orn-outline, none);
+      }
+      body.walk-pixel .walker img {
+        image-rendering: pixelated;
+      }
+      .walker .shadow {
+        position: absolute;
+        left: 50%;
+        border-radius: 50%;
+        background: rgba(20, 30, 50, 0.22);
+        transform: translateX(-50%);
+      }
+      body.show-band .walk-band {
+        display: block;
+      }
+      .walk-band {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        border: 2px dashed #2b6cb0;
+        background: #2b6cb014;
+        pointer-events: none;
+        z-index: 30;
+      }
+      .tree-base {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        border-top: 2px dashed #d6453d;
+        pointer-events: none;
+        z-index: 30;
+      }
+      body.show-band .tree-base {
+        display: block;
+      }
+      .walker .shiny-star {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        color: #f5c400;
+        animation: ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+      }
+      .orn {
+        position: absolute;
+        width: 0;
+        height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .orn .in {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .hit {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: none;
+        cursor: grab;
+      }
+      body.showhit .hit {
+        outline: 2px solid #d6453d;
+      }
+      .hit img {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        max-width: none;
+        pointer-events: none;
+        image-rendering: pixelated;
+      }
+      body.smooth.mode-pokemon .hit img {
+        image-rendering: auto;
+      }
+      .num {
+        position: absolute;
+        left: -6px;
+        top: -6px;
+        z-index: 11;
+        font-size: 10px;
+        background: #1d1d1f;
+        color: #fff;
+        border-radius: 999px;
+        padding: 0 4px;
+        display: none;
+      }
+      body.edit .num {
+        display: block;
+      }
+      .nick {
+        position: relative;
+        z-index: 10;
+        margin-top: -8px;
+        white-space: nowrap;
+        border-radius: 999px;
+        background: var(--nick-bg, #ffffff73);
+        padding: 0 6px;
+        font:
+          16px/20px 'Pokemon DPPt',
+          sans-serif;
+        color: var(--nick-color, #1d1d1f);
+        text-shadow: var(--nick-shadow, none);
+        pointer-events: none;
+      }
+      body.mode-pokemon .nick {
+        margin-top: 4px;
+      }
+      body.nonick .nick {
+        display: none;
+      }
+      .star {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        color: #f5c400;
+        animation: ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        pointer-events: none;
+        z-index: 1;
+      }
+      @keyframes ping {
+        75%,
+        100% {
+          transform: scale(2);
+          opacity: 0;
+        }
+      }
+      /* 조절판 */
+      .panel {
+        width: 360px;
+        max-width: 100%;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        justify-content: space-between;
+      }
+      .row label {
+        color: var(--muted);
+      }
+      .row b {
+        min-width: 3em;
+        text-align: right;
+      }
+      .row input[type='range'] {
+        flex: 1;
+      }
+      .checks {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+      }
+      .checks label {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      select,
+      .btn {
+        font: inherit;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--fg);
+      }
+      .btn {
+        cursor: pointer;
+      }
+      .only-pokemon,
+      .only-ball {
+        display: contents;
+      }
+      body.mode-ball .only-pokemon,
+      body.mode-pokemon .only-ball {
+        display: none;
+      }
+      textarea {
+        width: 100%;
+        height: 72px;
+        font:
+          12px ui-monospace,
+          monospace;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--bg);
+        color: var(--fg);
+        padding: 6px;
+        resize: vertical;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 0;
+      }
+      /* 오른쪽 PokéAPI 이미지 목록. 넓은 화면에서는 오른쪽, 좁은 화면에서는 아래 */
+      .page {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 0 24px;
+        max-width: 1500px;
+        margin: 0 auto;
+      }
+      .page > .wrap {
+        margin: 0;
+        flex: 0 1 760px;
+      }
+      .sprites {
+        flex: 1 1 420px;
+        max-width: 680px;
+        padding: 12px 16px 32px;
+        box-sizing: border-box;
+      }
+      @media (min-width: 1100px) {
+        .sprites {
+          position: sticky;
+          top: 0;
+          max-height: 100vh;
+          overflow: auto;
+        }
+      }
+      .sp-head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .sp-head h2 {
+        font-size: 16px;
+        margin: 0;
+      }
+      .sp-head form {
+        display: flex;
+        gap: 6px;
+      }
+      .sp-head input {
+        width: 130px;
+        font: inherit;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--fg);
+      }
+      .sp-group {
+        margin: 14px 0 4px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .sp-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+        gap: 6px;
+      }
+      .sp-cell {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 6px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+      }
+      .sp-cell .stage {
+        width: 100%;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: repeating-conic-gradient(#0000000d 0 25%, transparent 0 50%) 0 0/10px 10px;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .sp-cell img {
+        max-width: 100%;
+        max-height: 96px;
+        image-rendering: pixelated;
+      }
+      .sp-cell .k {
+        font-size: 11px;
+        text-align: center;
+        word-break: break-all;
+      }
+      .sp-cell .k.shiny {
+        color: #c08a00;
+      }
+      .sp-cell .m {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      body.tree-ai .spruce-only {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      .panel h2 {
+        font-size: 14px;
+        margin: 4px 0 0;
+      }
+      .seg.sm {
+        max-width: none;
+        flex: 1;
+      }
+      .seg.sm button {
+        padding: 5px 0;
+        font-weight: 500;
+        font-size: 13px;
+      }
+      .row .seg.sm {
+        margin-left: auto;
+        max-width: 230px;
+      }
+      body.nobgctl .bgctl {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+      body.noeffctl .effctl {
+        opacity: 0.4;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body class="mode-ball showhit smooth">
+    <!-- 그림자 밝히기: 어두운 색일수록 많이 밝아지는 감마 보정. 밝은 눈은 거의 그대로 둔다 -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <filter id="shadowLift" color-interpolation-filters="sRGB">
+        <feComponentTransfer>
+          <feFuncR id="gR" type="gamma" amplitude="1" exponent="1" offset="0" />
+          <feFuncG id="gG" type="gamma" amplitude="1" exponent="1" offset="0" />
+          <feFuncB id="gB" type="gamma" amplitude="1" exponent="1" offset="0" />
+        </feComponentTransfer>
+      </filter>
+    </svg>
+    <div class="page">
+      <div class="wrap">
+        <h1>
+          트리 장식 에디터
+          <a
+            href="/"
+            target="_top"
+            style="font-size: 12px; font-weight: normal; color: var(--muted); margin-left: 6px"
+            >← PokéLetter로</a
+          >
+        </h1>
+        <div class="seg" role="group" aria-label="보기">
+          <button type="button" data-mode="ball" aria-pressed="true">몬스터볼 (공개 전)</button>
+          <button type="button" data-mode="pokemon" aria-pressed="false">포켓몬 (공개 후)</button>
+        </div>
+
+        <div class="scene">
+          <div class="snow"></div>
+          <div class="tree" id="tree">
+            <img id="treeImg" src="/art-temp/tree.png" alt="" />
+            <div class="art" id="treeArt" hidden></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 style="margin-top: 0">트리</h2>
+          <div class="row">
+            <label for="treeKind">트리 이미지</label>
+            <select id="treeKind">
+              <option value="ai">지금 (AI 임시본)</option>
+              <optgroup label="가문비 · 눈 많음">
+                <option value="high" selected>Green_Teal (기본)</option>
+                <option value="high-green">Green</option>
+                <option value="high-teal">Teal</option>
+                <option value="high-cold">Cold</option>
+                <option value="high-yellow">Yellow</option>
+                <option value="high-night">Night</option>
+              </optgroup>
+              <optgroup label="가문비 · 눈 보통">
+                <option value="medium">Green_Teal (기본)</option>
+                <option value="medium-green">Green</option>
+                <option value="medium-teal">Teal</option>
+                <option value="medium-cold">Cold</option>
+                <option value="medium-yellow">Yellow</option>
+                <option value="medium-night">Night</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="row spruce-only">
+            <label for="treeScale">트리 배율 (원본 74×129)</label>
+            <select id="treeScale">
+              <option value="2">2× (148×258)</option>
+              <option value="3" selected>3× (222×387)</option>
+            </select>
+          </div>
+          <div class="row spruce-only">
+            <label for="tWidth">트리 가로 폭</label
+            ><input type="range" id="tWidth" min="100" max="150" step="5" value="120" /><b
+              id="tWidthVal"
+            ></b>
+          </div>
+          <div class="row spruce-only">
+            <label for="fps">눈 속도</label
+            ><input type="range" id="fps" min="4" max="24" step="1" value="10" /><b id="fpsVal"></b>
+          </div>
+          <label class="hint spruce-only" style="display: flex; gap: 6px; align-items: center"
+            ><input type="checkbox" id="pause" /> 눈 애니메이션 멈추기</label
+          >
+          <div class="row">
+            <label for="tShadow">그림자 밝히기</label
+            ><input type="range" id="tShadow" min="0" max="100" step="5" value="0" /><b
+              id="tShadowVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="tLift">가장 어두운 색 올리기</label
+            ><input type="range" id="tLift" min="0" max="40" step="2" value="0" /><b
+              id="tLiftVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="tBright">트리 밝기</label
+            ><input type="range" id="tBright" min="60" max="180" step="5" value="100" /><b
+              id="tBrightVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="tSat">트리 채도</label
+            ><input type="range" id="tSat" min="0" max="150" step="5" value="100" /><b
+              id="tSatVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="tOpa">트리 진하기</label
+            ><input type="range" id="tOpa" min="30" max="100" step="5" value="100" /><b
+              id="tOpaVal"
+            ></b>
+          </div>
+          <h2>함께 지내는 포켓몬 (걸어 다니기)</h2>
+          <div class="row">
+            <label>보이기</label>
+            <div class="seg sm" id="walkSeg">
+              <button type="button" data-v="on" aria-pressed="true">켬</button
+              ><button type="button" data-v="off" aria-pressed="false">끔</button>
+            </div>
+          </div>
+          <div class="row">
+            <label for="wCount">마리 수</label
+            ><input type="range" id="wCount" min="0" max="6" step="1" value="6" /><b
+              id="wCountVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="wSet">포켓몬</label>
+            <select id="wSet">
+              <option value="normal">보통 6마리</option>
+              <option value="big">그림이 큰 6마리</option>
+              <option value="random">무작위 6마리</option>
+            </select>
+            <button class="btn" id="wReroll" type="button">다시 뽑기</button>
+          </div>
+          <div class="row">
+            <label for="wSize">크기</label
+            ><input type="range" id="wSize" min="48" max="96" step="8" value="96" /><b
+              id="wSizeVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="wSpeed">걷는 속도</label
+            ><input type="range" id="wSpeed" min="8" max="64" step="4" value="24" /><b
+              id="wSpeedVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="wRest">최대 쉬는 시간</label
+            ><input type="range" id="wRest" min="0" max="8" step="1" value="4" /><b
+              id="wRestVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="yard">앞마당 높이</label
+            ><input type="range" id="yard" min="32" max="200" step="4" value="112" /><b
+              id="yardVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="wTop">걷는 범위 위쪽</label
+            ><input type="range" id="wTop" min="20" max="95" step="1" value="72" /><b
+              id="wTopVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="wBottom">걷는 범위 아래쪽</label
+            ><input type="range" id="wBottom" min="40" max="100" step="1" value="98" /><b
+              id="wBottomVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="wBase">트리 앞뒤 기준선 (밑동 기준)</label
+            ><input type="range" id="wBase" min="-120" max="20" step="2" value="-6" /><b
+              id="wBaseVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="wBob">걸음 흔들림</label
+            ><input type="range" id="wBob" min="0" max="10" step="1" value="4" /><b
+              id="wBobVal"
+            ></b>
+          </div>
+          <div class="checks">
+            <label><input type="checkbox" id="wHop" checked /> 통통 튀기</label>
+            <label><input type="checkbox" id="wShiny" checked /> 이로치 1마리 섞기</label>
+            <label><input type="checkbox" id="wPixel" /> 픽셀 유지</label>
+            <label><input type="checkbox" id="wShowBand" /> 걷는 범위·기준선 보기</label>
+            <label><input type="checkbox" id="wShadow" checked /> 발밑 그림자</label>
+          </div>
+          <h2>장식 돋보이게</h2>
+          <div class="row">
+            <label>누르는 범위 (빨간 테두리)</label>
+            <div class="seg sm" id="hitSeg">
+              <button type="button" data-v="on" aria-pressed="true">켬</button
+              ><button type="button" data-v="off" aria-pressed="false">끔</button>
+            </div>
+          </div>
+          <div class="row">
+            <label>테두리</label>
+            <div class="seg sm" data-opt="outline">
+              <button type="button" data-v="none" aria-pressed="true">없음</button
+              ><button type="button" data-v="w1" aria-pressed="false">흰 1px</button
+              ><button type="button" data-v="w2" aria-pressed="false">흰 2px</button
+              ><button type="button" data-v="glow" aria-pressed="false">흰 빛</button
+              ><button type="button" data-v="dark" aria-pressed="false">검정</button>
+            </div>
+          </div>
+          <div class="row">
+            <label>뒤 배경</label>
+            <div class="seg sm" data-opt="halo">
+              <button type="button" data-v="none" aria-pressed="true">없음</button
+              ><button type="button" data-v="soft" aria-pressed="false">흰 원</button
+              ><button type="button" data-v="snow" aria-pressed="false">눈 원</button>
+            </div>
+          </div>
+          <p class="hint">
+            장식 자리는 지금 트리(300×360) 기준 좌표를 새 트리 크기에 비례해 옮긴 것입니다.
+          </p>
+          <div class="only-ball">
+            <div class="row">
+              <label for="ballScale">볼 배율 (원본 30px)</label>
+              <select id="ballScale">
+                <option value="1">1× (30px)</option>
+                <option value="2" selected>2× (60px)</option>
+                <option value="3">3× (90px)</option>
+              </select>
+            </div>
+          </div>
+          <div class="only-pokemon">
+            <div class="row">
+              <label for="pkSize">포켓몬 크기</label
+              ><input type="range" id="pkSize" min="32" max="96" step="4" value="96" /><b
+                id="pkSizeVal"
+              ></b>
+            </div>
+            <div class="row">
+              <label for="pkSet">포켓몬</label>
+              <select id="pkSet">
+                <option value="big">그림이 큰 10마리</option>
+                <option value="normal">보통 10마리</option>
+                <option value="random">무작위 10마리</option>
+              </select>
+              <button class="btn" id="reroll" type="button">다시 뽑기</button>
+            </div>
+          </div>
+          <div class="row">
+            <label for="hit">누르는 범위</label
+            ><input type="range" id="hit" min="24" max="80" step="4" value="48" /><b
+              id="hitVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label for="count">장식 수</label
+            ><input type="range" id="count" min="1" max="10" step="1" value="10" /><b
+              id="countVal"
+            ></b>
+          </div>
+          <div class="checks">
+            <label class="only-pokemon"
+              ><input type="checkbox" id="smooth" checked /> 부드럽게 축소</label
+            >
+            <label><input type="checkbox" id="showhit" checked /> 누르는 범위 표시</label>
+            <label><input type="checkbox" id="nick" checked /> 닉네임</label>
+            <label><input type="checkbox" id="night" /> 밤</label>
+            <label><input type="checkbox" id="edit" /> 자리 옮기기</label>
+          </div>
+          <h2>닉네임 글씨</h2>
+          <div class="row">
+            <label>글씨 색</label>
+            <div class="seg sm" data-opt="color">
+              <button type="button" data-v="black" aria-pressed="true">검정</button
+              ><button type="button" data-v="white" aria-pressed="false">하양</button>
+            </div>
+          </div>
+          <div class="row">
+            <label>배경</label>
+            <div class="seg sm" data-opt="bg">
+              <button type="button" data-v="on" aria-pressed="true">있음</button
+              ><button type="button" data-v="off" aria-pressed="false">없음</button>
+            </div>
+          </div>
+          <div class="row bgctl">
+            <label for="bgAlpha">배경 진하기</label
+            ><input type="range" id="bgAlpha" min="10" max="100" step="5" value="45" /><b
+              id="bgAlphaVal"
+            ></b>
+          </div>
+          <div class="row">
+            <label>효과</label>
+            <div class="seg sm" data-opt="effect">
+              <button type="button" data-v="none" aria-pressed="true">없음</button
+              ><button type="button" data-v="shadow" aria-pressed="false">그림자</button
+              ><button type="button" data-v="glow" aria-pressed="false">글로우</button
+              ><button type="button" data-v="outline" aria-pressed="false">외곽선</button>
+            </div>
+          </div>
+          <div class="row effctl">
+            <label for="effStrength">효과 세기</label
+            ><input type="range" id="effStrength" min="1" max="4" step="1" value="2" /><b
+              id="effStrengthVal"
+            ></b>
+          </div>
+          <label class="hint" style="display: flex; gap: 6px; align-items: center"
+            ><input type="checkbox" id="longNick" /> 10자 닉네임으로 보기</label
+          >
+          <textarea id="nickCss" readonly style="height: 84px"></textarea>
+          <p class="hint">
+            "자리 옮기기"를 켜고 장식을 끌면 자리가 바뀝니다. 아래 값이 앱의 TreeScene SLOTS
+            형식입니다.
+          </p>
+          <textarea id="slots" readonly></textarea>
+          <div class="row">
+            <button class="btn" id="copy" type="button">SLOTS 복사</button
+            ><button class="btn" id="reset" type="button">자리 처음으로</button>
+          </div>
+        </div>
+      </div>
+      <aside class="sprites" aria-label="PokéAPI 이미지">
+        <div class="sp-head">
+          <h2>PokéAPI 이미지</h2>
+          <form id="spForm">
+            <input id="spQ" value="934" placeholder="번호 또는 영문 이름" inputmode="text" /><button
+              class="btn"
+            >
+              불러오기
+            </button>
+          </form>
+        </div>
+        <p class="hint" id="spInfo">불러오는 중…</p>
+        <label class="hint" style="display: flex; gap: 6px; align-items: center"
+          ><input type="checkbox" id="spBack" /> 뒷모습 포함</label
+        >
+        <div id="spOut"></div>
+      </aside>
+    </div>
+    <script>
+      const $ = (id) => document.getElementById(id)
+      const POKE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'
+      const ITEM = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/'
+      const DEFAULT_SLOTS = [
+        [150, 80],
+        [105, 150],
+        [195, 150],
+        [60, 220],
+        [150, 214],
+        [240, 220],
+        [30, 286],
+        [110, 280],
+        [190, 280],
+        [270, 286],
+      ]
+      const SHORT_NICKS = [
+        '이슬',
+        '웅이',
+        '피카츄친구',
+        '눈사람',
+        '산타',
+        '별빛',
+        '호빵',
+        '루돌프',
+        '눈꽃',
+        '겨울잠',
+      ]
+      const LONG_NICKS = [
+        '우리크리스마스에만나',
+        '메리크리스마스지우야',
+        '눈사람만들기대장님들',
+        '루돌프사슴코는빨개요',
+        '산타할아버지선물줘요',
+        '피카츄라이츄파이리꼬',
+        '따뜻한겨울보내세요오',
+        '새해복많이받으세요요',
+        '호빵이랑붕어빵최고야',
+        '반짝반짝작은별빛이야',
+      ]
+      let NICKS = SHORT_NICKS
+      const nick = { color: 'black', bg: 'on', effect: 'none' }
+      const BALLS = [
+        'poke-ball',
+        'great-ball',
+        'ultra-ball',
+        'master-ball',
+        'premier-ball',
+        'luxury-ball',
+        'dusk-ball',
+        'heal-ball',
+        'quick-ball',
+        'dream-ball',
+      ]
+      const SETS = {
+        big: [797, 717, 805, 644, 796, 1021, 1007, 794, 249, 663],
+        normal: [385, 25, 133, 39, 7, 4, 1, 151, 175, 393],
+      }
+      const SHINY = new Set([2, 7]) // 3·8번째 장식
+      const STARS = [
+        [8, 10, 0],
+        [78, 4, 0.4],
+        [86, 62, 0.8],
+        [12, 70, 1.2],
+      ]
+      const STORE = 'tree-editor:slots-v3'
+
+      const load = () => {
+        try {
+          const s = JSON.parse(localStorage.getItem(STORE))
+          if (Array.isArray(s) && s.length === 10) return s
+        } catch {}
+        return DEFAULT_SLOTS.map((p) => [...p])
+      }
+      const save = () => {
+        try {
+          localStorage.setItem(STORE, JSON.stringify(slots))
+        } catch {}
+      }
+      let slots = load()
+      let mode = 'ball'
+      let randomIds = rollRandom()
+
+      function rollRandom() {
+        const a = new Uint32Array(10)
+        crypto.getRandomValues(a)
+        return [...a].map((v) => (v % 1025) + 1) // 미리보기용이라 편향은 무시
+      }
+      const pokemonIds = () => ($('pkSet').value === 'random' ? randomIds : SETS[$('pkSet').value])
+
+      function render() {
+        const hit = Number($('hit').value)
+        const count = Number($('count').value)
+        const pk = Number($('pkSize').value)
+        const ball = 30 * Number($('ballScale').value)
+        $('hitVal').textContent = hit + 'px'
+        $('countVal').textContent = count + '개'
+        $('pkSizeVal').textContent = pk + 'px'
+        const tree = $('tree')
+        tree.querySelectorAll('.orn').forEach((n) => n.remove())
+        const ids = pokemonIds()
+        slots.slice(0, count).forEach(([x, y], i) => {
+          const shiny = SHINY.has(i)
+          const size = mode === 'ball' ? ball : pk
+          const src =
+            mode === 'ball'
+              ? `${ITEM}${BALLS[i]}.png`
+              : `${POKE}${shiny ? 'shiny/' : ''}${ids[i]}.png`
+          // 볼은 그림 전체가 누르는 범위, 포켓몬은 가운데 hit만큼 (앱 Ornament와 같음)
+          const box = mode === 'ball' ? size : hit
+          const stars = shiny
+            ? STARS.map(
+                ([l, t, d]) =>
+                  `<svg class="star" viewBox="0 0 10 10" style="left:${l}%;top:${t}%;animation-delay:${d}s"><path fill="currentColor" d="M5 0 6 4 10 5 6 6 5 10 4 6 0 5 4 4Z"/></svg>`,
+              ).join('')
+            : ''
+          const o = document.createElement('div')
+          o.className = 'orn'
+          o.style.left = x * treeBox.fx + 'px'
+          o.style.top = y * treeBox.fy + 'px'
+          o.innerHTML = `<div class="in"><span class="hit" style="width:${box}px;height:${box}px" data-i="${i}">
+        <img src="${src}" width="${size}" height="${size}" alt="">${stars}<span class="num">${i + 1}</span></span>
+      <span class="nick">${NICKS[i]}</span></div>`
+          tree.appendChild(o)
+        })
+        $('slots').value =
+          'const SLOTS = [\n' + slots.map(([x, y]) => `  [${x}, ${y}],`).join('\n') + '\n]'
+      }
+
+      // 끌어서 자리 옮기기 (마우스·터치 모두)
+      let drag = null
+      $('tree').addEventListener('pointerdown', (e) => {
+        const h = e.target.closest('.hit')
+        if (!h || !document.body.classList.contains('edit')) return
+        e.preventDefault()
+        const i = Number(h.dataset.i)
+        drag = {
+          i,
+          el: h.closest('.orn'),
+          sx: e.clientX,
+          sy: e.clientY,
+          ox: slots[i][0],
+          oy: slots[i][1],
+        }
+        h.setPointerCapture(e.pointerId)
+      })
+      $('tree').addEventListener('pointermove', (e) => {
+        if (!drag) return
+        const x = Math.round(
+          Math.min(330, Math.max(-30, drag.ox + (e.clientX - drag.sx) / treeBox.fx)),
+        )
+        const y = Math.round(
+          Math.min(360, Math.max(0, drag.oy + (e.clientY - drag.sy) / treeBox.fy)),
+        )
+        slots[drag.i] = [x, y]
+        drag.el.style.left = x * treeBox.fx + 'px'
+        drag.el.style.top = y * treeBox.fy + 'px'
+      })
+      const endDrag = () => {
+        if (drag) {
+          drag = null
+          save()
+          render()
+        }
+      }
+      $('tree').addEventListener('pointerup', endDrag)
+      $('tree').addEventListener('pointercancel', endDrag)
+
+      document.querySelectorAll('.seg:not(.sm) button').forEach(
+        (b) =>
+          (b.onclick = () => {
+            mode = b.dataset.mode
+            document
+              .querySelectorAll('.seg:not(.sm) button')
+              .forEach((x) => x.setAttribute('aria-pressed', String(x === b)))
+            document.body.classList.toggle('mode-ball', mode === 'ball')
+            document.body.classList.toggle('mode-pokemon', mode === 'pokemon')
+            render()
+          }),
+      )
+      for (const id of ['hit', 'count', 'pkSize', 'ballScale', 'pkSet'])
+        $(id).addEventListener('input', render)
+      $('reroll').onclick = () => {
+        randomIds = rollRandom()
+        $('pkSet').value = 'random'
+        render()
+      }
+      const flag = (id, cls, invert = false) =>
+        ($(id).onchange = (e) =>
+          document.body.classList.toggle(cls, invert ? !e.target.checked : e.target.checked))
+      flag('smooth', 'smooth')
+      flag('showhit', 'showhit')
+      flag('nick', 'nonick', true)
+      flag('night', 'night')
+      flag('edit', 'edit')
+      $('copy').onclick = async () => {
+        try {
+          await navigator.clipboard.writeText($('slots').value)
+          $('copy').textContent = '복사됨'
+        } catch {
+          $('slots').select()
+          $('copy').textContent = '선택됨 — 직접 복사'
+        }
+        setTimeout(() => ($('copy').textContent = 'SLOTS 복사'), 1200)
+      }
+      $('reset').onclick = () => {
+        slots = DEFAULT_SLOTS.map((p) => [...p])
+        save()
+        render()
+      }
+      function applyNick() {
+        const dark = nick.color === 'black'
+        const fg = dark ? '#1d1d1f' : '#ffffff'
+        const back = dark ? '255,255,255' : '0,0,0' // 글씨와 반대 색
+        const a = Number($('bgAlpha').value) / 100
+        const k = Number($('effStrength').value)
+        const c = `rgb(${back})`
+        const shadows = {
+          none: 'none',
+          shadow: `${k}px ${k}px 0 rgba(${back},.85)`,
+          glow: `0 0 ${k * 2}px ${c}, 0 0 ${k * 4}px ${c}`,
+          outline: [
+            [-1, -1],
+            [0, -1],
+            [1, -1],
+            [-1, 0],
+            [1, 0],
+            [-1, 1],
+            [0, 1],
+            [1, 1],
+          ]
+            .map(([x, y]) => `${x * k}px ${y * k}px 0 ${c}`)
+            .join(', '),
+        }
+        const bg = nick.bg === 'on' ? `rgba(${back},${a})` : 'transparent'
+        const b = document.body.style
+        b.setProperty('--nick-color', fg)
+        b.setProperty('--nick-bg', bg)
+        b.setProperty('--nick-shadow', shadows[nick.effect])
+        document.body.classList.toggle('nobgctl', nick.bg === 'off')
+        document.body.classList.toggle('noeffctl', nick.effect === 'none')
+        $('bgAlphaVal').textContent = Math.round(a * 100) + '%'
+        $('effStrengthVal').textContent = k + 'px'
+        $('nickCss').value =
+          `color: ${fg};\nbackground: ${bg};\ntext-shadow: ${shadows[nick.effect]};`
+      }
+      document.querySelectorAll('.seg.sm').forEach((g) =>
+        g.querySelectorAll('button').forEach(
+          (btn) =>
+            (btn.onclick = () => {
+              nick[g.dataset.opt] = btn.dataset.v
+              g.querySelectorAll('button').forEach((x) =>
+                x.setAttribute('aria-pressed', String(x === btn)),
+              )
+              applyNick()
+            }),
+        ),
+      )
+      for (const id of ['bgAlpha', 'effStrength']) $(id).addEventListener('input', applyNick)
+      $('longNick').onchange = (e) => {
+        NICKS = e.target.checked ? LONG_NICKS : SHORT_NICKS
+        render()
+      }
+      applyNick()
+      // 트리 이미지 비교
+      const treeBox = { fx: 1, fy: 1 }
+      function applyTree() {
+        const kind = $('treeKind').value
+        const tree = $('tree'),
+          art = $('treeArt')
+        document.body.classList.toggle('tree-ai', kind === 'ai')
+        if (kind === 'ai') {
+          tree.style.width = '300px'
+          tree.style.height = '360px'
+          $('treeImg').hidden = false
+          art.hidden = true
+          treeBox.fx = treeBox.fy = 1
+        } else {
+          const k = Number($('treeScale').value)
+          const h = kind.startsWith('medium') ? 128 : 129
+          const wf = Number($('tWidth').value) / 100
+          $('tWidthVal').textContent = Math.round(wf * 100) + '%'
+          const W = Math.round(74 * k * wf),
+            H = h * k
+          tree.style.width = W + 'px'
+          tree.style.height = H + 'px'
+          $('treeImg').hidden = true
+          art.hidden = false
+          art.style.backgroundImage = `url(/editor/spruce/${kind}.png)`
+          art.style.backgroundSize = `${W * 27}px ${H}px`
+          art.style.setProperty('--end', `-${W * 27}px`)
+          const fps = Number($('fps').value)
+          art.style.setProperty('--dur', 27 / fps + 's')
+          $('fpsVal').textContent = fps + '프레임/초'
+          // 애니메이션 값이 바뀌면 다시 시작해야 반영된다
+          art.style.animation = 'none'
+          void art.offsetWidth
+          art.style.animation = ''
+          treeBox.fx = W / 300
+          treeBox.fy = H / 360
+        }
+        render()
+      }
+      for (const id of ['treeKind', 'treeScale', 'fps', 'tWidth'])
+        $(id).addEventListener('input', applyTree)
+      const deco = { outline: 'none', halo: 'none' }
+      function applyLook() {
+        const b = document.body.style
+        const br = Number($('tBright').value),
+          sa = Number($('tSat').value),
+          op = Number($('tOpa').value)
+        $('tBrightVal').textContent = br + '%'
+        $('tSatVal').textContent = sa + '%'
+        $('tOpaVal').textContent = op + '%'
+        // 그림자 밝히기: 감마 지수를 1에서 0.35까지 낮춘다 (어두운 색이 크게 밝아짐)
+        const sh = Number($('tShadow').value),
+          lift = Number($('tLift').value)
+        const ex = 1 - sh * 0.0065,
+          off = lift / 100
+        for (const id of ['gR', 'gG', 'gB']) {
+          const f = $(id)
+          f.setAttribute('exponent', ex)
+          f.setAttribute('amplitude', 1 - off)
+          f.setAttribute('offset', off)
+        }
+        $('tShadowVal').textContent = sh + '%'
+        $('tLiftVal').textContent = lift + '%'
+        const lifted = sh > 0 || lift > 0 ? 'url(#shadowLift) ' : ''
+        b.setProperty('--tree-filter', `${lifted}brightness(${br / 100}) saturate(${sa / 100})`)
+        b.setProperty('--tree-opa', op / 100)
+        const d = (c, r) =>
+          [
+            [r, 0],
+            [-r, 0],
+            [0, r],
+            [0, -r],
+          ]
+            .map(([x, y]) => `drop-shadow(${x}px ${y}px 0 ${c})`)
+            .join(' ')
+        b.setProperty(
+          '--orn-outline',
+          {
+            none: 'none',
+            w1: d('#fff', 1),
+            w2: d('#fff', 2),
+            glow: 'drop-shadow(0 0 3px #fff) drop-shadow(0 0 6px #fffc)',
+            dark: d('#1d1d1f', 1),
+          }[deco.outline],
+        )
+        b.setProperty(
+          '--halo',
+          {
+            none: 'transparent',
+            soft: 'radial-gradient(circle, #ffffffd9 0 45%, #fff0 70%)',
+            snow: 'radial-gradient(circle, #eef6ffcc 0 55%, #eef6ff00 72%)',
+          }[deco.halo],
+        )
+        b.setProperty('--halo-size', deco.halo === 'none' ? '0' : mode === 'ball' ? '64px' : '76px')
+      }
+      document
+        .querySelectorAll('.seg.sm[data-opt="outline"], .seg.sm[data-opt="halo"]')
+        .forEach((g) =>
+          g.querySelectorAll('button').forEach(
+            (btn) =>
+              (btn.onclick = () => {
+                deco[g.dataset.opt] = btn.dataset.v
+                g.querySelectorAll('button').forEach((x) =>
+                  x.setAttribute('aria-pressed', String(x === btn)),
+                )
+                applyLook()
+              }),
+          ),
+        )
+      for (const id of ['tShadow', 'tLift', 'tBright', 'tSat', 'tOpa'])
+        $(id).addEventListener('input', applyLook)
+      document
+        .querySelectorAll('.seg:not(.sm) button')
+        .forEach((b) => b.addEventListener('click', applyLook))
+      applyLook()
+      function setHit(on) {
+        document.body.classList.toggle('showhit', on)
+        $('showhit').checked = on
+        $('hitSeg')
+          .querySelectorAll('button')
+          .forEach((x) => x.setAttribute('aria-pressed', String((x.dataset.v === 'on') === on)))
+      }
+      $('hitSeg')
+        .querySelectorAll('button')
+        .forEach((btn) => (btn.onclick = () => setHit(btn.dataset.v === 'on')))
+      $('showhit').addEventListener('change', (e) => setHit(e.target.checked))
+      $('pause').onchange = (e) => document.body.classList.toggle('paused', e.target.checked)
+      applyTree()
+      // AI 임시 트리(/art-temp, 저장소에 없음)를 못 불러오면 선택지에서 뺀다
+      $('treeImg').addEventListener(
+        'error',
+        () => {
+          const opt = $('treeKind').querySelector('option[value="ai"]')
+          if (opt) {
+            opt.disabled = true
+            opt.textContent += ' (파일 없음)'
+          }
+          if ($('treeKind').value === 'ai') {
+            $('treeKind').value = 'high'
+            applyTree()
+          }
+        },
+        { once: true },
+      )
+      // 스크립트보다 먼저 실패했으면 여기서 처리한다
+      if ($('treeImg').complete && !$('treeImg').naturalWidth)
+        $('treeImg').dispatchEvent(new Event('error'))
+
+      // ---------- 오른쪽: PokéAPI 이미지 전부 (기본 콜로솔트 #934) ----------
+      let spData = null
+      function spFlatten(o, path = [], acc = []) {
+        for (const [k, v] of Object.entries(o || {})) {
+          if (v && typeof v === 'object') spFlatten(v, [...path, k], acc)
+          else if (typeof v === 'string' && v)
+            acc.push({ group: path.join(' / ') || '기본 (sprites)', key: k, url: v })
+        }
+        return acc
+      }
+      function spRender() {
+        if (!spData) return
+        const { data, ko } = spData
+        const items = spFlatten(data.sprites).filter(
+          (i) => $('spBack').checked || !i.key.startsWith('back'),
+        )
+        const groups = new Map()
+        for (const it of items) {
+          if (!groups.has(it.group)) groups.set(it.group, [])
+          groups.get(it.group).push(it)
+        }
+        $('spInfo').textContent =
+          `#${data.id} ${ko ?? ''} (${data.name}) · 이미지 ${items.length}개 · 묶음 ${groups.size}개 · 누르면 주소 복사`
+        const out = $('spOut')
+        out.innerHTML = ''
+        for (const [g, list] of groups) {
+          out.insertAdjacentHTML(
+            'beforeend',
+            `<div class="sp-group">${g} <span class="hint">(${list.length})</span></div>`,
+          )
+          const grid = document.createElement('div')
+          grid.className = 'sp-grid'
+          for (const it of list) {
+            const c = document.createElement('div')
+            c.className = 'sp-cell'
+            c.title = it.url
+            c.innerHTML = `<div class="stage"><img loading="lazy" alt="" src="${it.url}"></div><div class="k ${it.key.includes('shiny') ? 'shiny' : ''}">${it.key}</div><div class="m">${it.url.split('.').pop()} · …</div>`
+            const img = c.querySelector('img')
+            img.onload = () => {
+              c.querySelector('.m').textContent =
+                `${it.url.split('.').pop()} · ${img.naturalWidth}×${img.naturalHeight}`
+            }
+            img.onerror = () => {
+              c.querySelector('.m').textContent = '불러오기 실패'
+            }
+            c.onclick = async () => {
+              try {
+                await navigator.clipboard.writeText(it.url)
+                c.querySelector('.m').textContent = '주소 복사됨'
+              } catch {
+                prompt('주소', it.url)
+              }
+            }
+            grid.appendChild(c)
+          }
+          out.appendChild(grid)
+        }
+      }
+      async function spLoad(q) {
+        $('spInfo').textContent = '불러오는 중…'
+        $('spOut').innerHTML = ''
+        try {
+          const r = await fetch(
+            `https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(String(q).trim().toLowerCase())}`,
+          )
+          if (!r.ok)
+            throw new Error(
+              r.status === 404 ? '찾을 수 없음 (번호나 영문 이름으로)' : 'HTTP ' + r.status,
+            )
+          const data = await r.json()
+          let ko = null
+          try {
+            ko =
+              (await (await fetch(data.species.url)).json()).names.find(
+                (n) => n.language.name === 'ko',
+              )?.name ?? null
+          } catch {}
+          spData = { data, ko }
+          spRender()
+        } catch (e) {
+          $('spInfo').textContent = '실패: ' + e.message
+        }
+      }
+      $('spForm').onsubmit = (e) => {
+        e.preventDefault()
+        spLoad($('spQ').value)
+      }
+      $('spBack').onchange = spRender
+      spLoad(934)
+
+      // ---------- 함께 지내는 포켓몬 걸어 다니기 미리보기 ----------
+      // 깊이: 발 위치(y)가 트리 앞뒤 기준선보다 위면 트리 뒤, 아래면 트리·장식 앞에 그린다.
+      // 같은 쪽끼리는 발이 아래(화면 앞)인 포켓몬을 앞에 그린다.
+      const W_SETS = { normal: [25, 133, 1, 4, 7, 393], big: [249, 6, 144, 717, 663, 1007] }
+      let wRandom = rollRandom().slice(0, 6)
+      let walkers = []
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)')
+      const walkIds = () => ($('wSet').value === 'random' ? wRandom : W_SETS[$('wSet').value])
+      const sceneEl = document.querySelector('.scene')
+      // 장면 좌표(px). 레이어는 장면 전체를 덮도록 트리 기준으로 위치를 맞춘다
+      function geom() {
+        const tree = $('tree')
+        const sr = sceneEl.getBoundingClientRect(),
+          tr = tree.getBoundingClientRect()
+        const H = sr.height
+        return {
+          W: sr.width,
+          H,
+          offX: sr.left - tr.left,
+          offY: sr.top - tr.top,
+          top: (H * Number($('wTop').value)) / 100,
+          bottom: (H * Number($('wBottom').value)) / 100,
+          base: tr.bottom - sr.top + Number($('wBase').value),
+        }
+      }
+      function layer(name) {
+        let el = document.querySelector('.walkers.' + name)
+        if (!el) {
+          el = document.createElement('div')
+          el.className = 'walkers ' + name
+          const tree = $('tree')
+          if (name === 'back')
+            tree.insertBefore(el, tree.firstChild) // 트리 그림보다 먼저 → 뒤
+          else tree.appendChild(el)
+        }
+        return el
+      }
+      function guides(g) {
+        for (const [cls, top, h] of [
+          ['walk-band', g.top, g.bottom - g.top],
+          ['tree-base', g.base, 0],
+        ]) {
+          let el = sceneEl.querySelector('.' + cls)
+          if (!el) {
+            el = document.createElement('div')
+            el.className = cls
+            sceneEl.appendChild(el)
+          }
+          el.style.top = top + 'px'
+          if (h) el.style.height = h + 'px'
+        }
+      }
+      function buildWalkers() {
+        const back = layer('back'),
+          front = layer('front')
+        back.innerHTML = ''
+        front.innerHTML = ''
+        const g = geom()
+        for (const l of [back, front]) {
+          l.style.left = g.offX + 'px'
+          l.style.top = g.offY + 'px'
+          l.style.width = g.W + 'px'
+          l.style.height = g.H + 'px'
+        }
+        guides(g)
+        const on = $('walkSeg').querySelector('[aria-pressed=true]').dataset.v === 'on'
+        const n = on ? Number($('wCount').value) : 0
+        const size = Number($('wSize').value)
+        const ids = walkIds()
+        walkers = []
+        for (let i = 0; i < n; i++) {
+          const shiny = $('wShiny').checked && i === 1
+          const el = document.createElement('div')
+          el.className = 'walker'
+          el.innerHTML =
+            `<span class="shadow"></span><span class="body"><img src="${POKE}${shiny ? 'shiny/' : ''}${ids[i]}.png" width="${size}" height="${size}" alt=""></span>` +
+            (shiny
+              ? STARS.map(
+                  ([l, t, d]) =>
+                    `<svg class="shiny-star" viewBox="0 0 10 10" style="left:${l}%;top:${t}%;animation-delay:${d}s"><path fill="currentColor" d="M5 0 6 4 10 5 6 6 5 10 4 6 0 5 4 4Z"/></svg>`,
+                ).join('')
+              : '')
+          const x = (g.W / (n + 1)) * (i + 1)
+          const y = g.top + (g.bottom - g.top) * ((i * 0.37) % 1)
+          walkers.push({
+            el,
+            body: el.querySelector('.body'),
+            shadow: el.querySelector('.shadow'),
+            size,
+            x,
+            y,
+            tx: x,
+            ty: y,
+            v: 0,
+            rest: 0.5 + Math.random() * 2,
+            face: -1,
+            phase: Math.random() * 6,
+            hop: 0,
+            side: '',
+          })
+        }
+        $('wCountVal').textContent = n + '마리'
+        $('wSizeVal').textContent = size + 'px'
+      }
+      let last = performance.now()
+      function tick(now) {
+        const dt = Math.min(0.05, (now - last) / 1000)
+        last = now
+        const g = geom()
+        const speed = Number($('wSpeed').value),
+          restMax = Number($('wRest').value),
+          bobAmp = Number($('wBob').value)
+        $('wSpeedVal').textContent = speed + 'px/초'
+        $('wRestVal').textContent = restMax + '초'
+        $('wTopVal').textContent = $('wTop').value + '%'
+        $('wBottomVal').textContent = $('wBottom').value + '%'
+        $('wBaseVal').textContent =
+          (Number($('wBase').value) > 0 ? '+' : '') + $('wBase').value + 'px'
+        $('wBobVal').textContent = bobAmp + 'px'
+        guides(g)
+        const still = reduced.matches || document.hidden
+        const back = layer('back'),
+          front = layer('front')
+        for (const w of walkers) {
+          let moving = false
+          if (!still) {
+            if (w.rest > 0) {
+              w.rest -= dt
+              if ($('wHop').checked && w.hop <= 0 && Math.random() < dt * 0.4) w.hop = 0.35
+              if (w.rest <= 0) {
+                // 다음 목적지: 걷는 범위 안 아무 곳. 너무 가까우면 다시 고른다
+                do {
+                  w.tx = w.size / 2 + Math.random() * (g.W - w.size)
+                  w.ty = g.top + Math.random() * Math.max(1, g.bottom - g.top)
+                } while (Math.hypot(w.tx - w.x, w.ty - w.y) < 40)
+                if (Math.abs(w.tx - w.x) > 4) w.face = w.tx > w.x ? 1 : -1
+              }
+            } else {
+              const dx = w.tx - w.x,
+                dy = w.ty - w.y,
+                dist = Math.hypot(dx, dy)
+              // 출발할 때 천천히 빨라지고 도착할 때 천천히 멈춘다
+              const want = Math.min(speed, dist * 2.5)
+              w.v += (want - w.v) * Math.min(1, dt * 4)
+              if (dist < 1) {
+                w.x = w.tx
+                w.y = w.ty
+                w.v = 0
+                w.rest = 0.6 + Math.random() * restMax
+              } else {
+                const k = Math.min(1, (w.v * dt) / dist)
+                w.x += dx * k
+                w.y += dy * k
+                moving = w.v > 2
+              }
+            }
+            if (w.hop > 0) w.hop -= dt
+          }
+          // 걸음: 속도에 맞춰 발걸음 박자를 세고, 한 걸음마다 몸이 살짝 뜨고 좌우로 기우뚱한다
+          let bob = 0,
+            tilt = 0,
+            squash = 1
+          if (moving) {
+            w.phase += dt * (4 + w.v / 6)
+            const s = Math.sin(w.phase)
+            bob = -Math.abs(s) * bobAmp
+            tilt = s * Math.min(7, 2 + bobAmp)
+            squash = 1 - (1 - Math.abs(s)) * 0.04
+          } else if (!still) {
+            w.phase += dt * 2
+            squash = 1 + Math.sin(w.phase) * 0.015 // 숨 쉬기
+          }
+          const hopY = w.hop > 0 ? -Math.sin((w.hop / 0.35) * Math.PI) * 10 : 0
+          // 깊이에 따라 앞뒤 레이어로 옮기고, 같은 레이어 안에서는 발 위치 순서
+          const side = w.y < g.base ? 'back' : 'front'
+          if (side !== w.side) {
+            ;(side === 'back' ? back : front).appendChild(w.el)
+            w.side = side
+          }
+          w.el.style.zIndex = Math.round(w.y)
+          const lift = bob + hopY
+          w.el.style.transform = `translate(${w.x - w.size / 2}px, ${w.y - w.size * 0.78}px)`
+          w.body.style.transform = `translateY(${lift}px) rotate(${tilt}deg) scale(${w.face > 0 ? -1 : 1}, ${squash})`
+          // 발밑 그림자: 뜰수록 작고 옅게
+          const sh = $('wShadow').checked ? 1 : 0
+          const shrink = 1 + lift / 30
+          w.shadow.style.cssText = `top:${w.size * 0.78 - 4}px;width:${w.size * 0.42 * shrink}px;height:${7 * shrink}px;opacity:${sh * (0.5 + 0.5 * shrink)}`
+        }
+        requestAnimationFrame(tick)
+      }
+      $('walkSeg')
+        .querySelectorAll('button')
+        .forEach(
+          (btn) =>
+            (btn.onclick = () => {
+              $('walkSeg')
+                .querySelectorAll('button')
+                .forEach((x) => x.setAttribute('aria-pressed', String(x === btn)))
+              buildWalkers()
+            }),
+        )
+      for (const id of ['wCount', 'wSet', 'wSize', 'wShiny'])
+        $(id).addEventListener('input', buildWalkers)
+      for (const id of ['wTop', 'wBottom'])
+        $(id).addEventListener('input', () => {
+          // 위쪽이 아래쪽을 넘지 않게
+          if (Number($('wTop').value) > Number($('wBottom').value) - 5)
+            $('wTop').value = Number($('wBottom').value) - 5
+          for (const w of walkers) {
+            w.rest = Math.min(w.rest, 0.2)
+          }
+        })
+      $('wPixel').onchange = (e) => document.body.classList.toggle('walk-pixel', e.target.checked)
+      $('wShowBand').onchange = (e) => document.body.classList.toggle('show-band', e.target.checked)
+      $('wReroll').onclick = () => {
+        wRandom = rollRandom().slice(0, 6)
+        $('wSet').value = 'random'
+        buildWalkers()
+      }
+      for (const id of ['treeKind', 'treeScale', 'tWidth'])
+        $(id).addEventListener('input', buildWalkers)
+      function applyYard() {
+        const y = Number($('yard').value)
+        $('tree').style.marginBottom = y + 'px'
+        sceneEl.style.height = 408 + y + 'px' // 트리 위쪽 하늘 높이는 그대로 두고 아래만 늘린다
+        $('yardVal').textContent = y + 'px'
+        buildWalkers()
+      }
+      $('yard').addEventListener('input', applyYard)
+      addEventListener('resize', buildWalkers)
+      applyYard()
+      buildWalkers()
+      requestAnimationFrame(tick)
+    </script>
+  </body>
+</html>
