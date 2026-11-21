@@ -54,6 +54,21 @@ pnpm dev
 | backend | `./gradlew build` | 컴파일 + 테스트 |
 | backend | `./gradlew test` | 테스트만 |
 
+## 프론트 미리보기 배포 (Netlify)
+
+백엔드 없이 프론트엔드만 올려 개발 현황을 보여 줄 때 쓴다. 설정은 루트 `netlify.toml`에 있다.
+
+- **목 API로 동작한다.** 데이터는 방문자 브라우저의 로컬스토리지에만 저장되고, 로그인 버튼은 바로 `/me`로 간다
+- **포켓몬·볼 이미지와 PokéAPI는 그대로 쓸 수 있다.** 이미지는 `raw.githubusercontent.com`의 PokéAPI 스프라이트를 직접 불러오고, 에디터(`/editor`)는 브라우저에서 `pokeapi.co`를 호출한다. 두 곳 모두 다른 도메인에서의 요청을 허용한다(`Access-Control-Allow-Origin: *`)
+- 에디터는 `/editor`에서 열린다
+
+배포 방법은 두 가지다.
+
+| 방법 | 하는 법 | 커밋하지 않는 임시 에셋 (`public/art-temp`, `public/fonts-temp`) |
+|---|---|---|
+| **저장소 연결** | Netlify에서 이 저장소를 연결한다. 빌드 설정은 `netlify.toml`을 읽는다 | 저장소에 없으므로 올라가지 않는다. 트리 배경은 하늘색, 글꼴은 원스토어 모바일POP체로 보인다 |
+| **CLI 수동 배포** | `cd frontend && pnpm build && pnpm dlx netlify-cli deploy --dir dist` (미리보기 주소), 확정은 `--prod` | 내 컴퓨터의 빌드 결과를 그대로 올리므로 함께 공개된다. Pokemon DPPt 글꼴(CC BY-SA 3.0)은 출처 표기가 필요하다 |
+
 ## 구조
 
 ```
