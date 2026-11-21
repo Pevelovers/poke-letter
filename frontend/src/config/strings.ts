@@ -24,6 +24,7 @@ export const strings = {
       '비상업적으로 운영해요.',
     ],
     contact: (email: string) => `문의: ${email}`,
+    fontCredit: '글꼴',
   },
   landing: {
     headline: '친구에게 포켓몬과 함께\n크리스마스 메시지를 받아 보세요',
