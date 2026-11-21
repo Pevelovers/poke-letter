@@ -17,14 +17,13 @@
 /*
  * 게임 문구 글꼴: Pokemon DPPt (aztecwarrior28, FontStruct, CC BY-SA 3.0)
  * https://fontstruct.com/fontstructions/show/1951915/pokemon-dppt-4
- * 게임 글꼴을 재현한 폰트라 저장소에 커밋하지 않는다(.gitignore, POL-IP-03 취지).
- * 파일이 없으면 일반 문구 글꼴로 보인다. 배포에 쓰려면 출처·라이선스 표기가 필요하다.
+ * CC BY-SA 3.0이라 출처를 표기하고 저장소에 둔다(#50). 배포 묶음의 readme.txt가 재배포 시
+ * 모든 파일을 함께 두라고 요구하므로 license.txt, readme.txt를 같은 폴더에 둔다.
+ * 출처 표기는 하단 고지(NoticeFooter)에 있다.
  */
 @font-face {
   font-family: 'Pokemon DPPt';
-  src:
-    url('/fonts-temp/pokemon-dppt.woff2') format('woff2'),
-    url('/fonts-temp/pokemon-dppt.otf') format('opentype');
+  src: url('/fonts/pokemon-dppt/pokemon-dppt.woff2') format('woff2');
   font-display: swap;
 }
 
