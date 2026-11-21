@@ -12,6 +12,17 @@ export const assets = {
   defaultOrnament: '/art-temp/ornament-default.png',
 } as const
 
+/** 출처 표기가 필요한 에셋. 하단 고지에 보여 준다 (#50) */
+export const credits = {
+  dpptFont: {
+    name: 'Pokemon DPPt',
+    author: 'aztecwarrior28',
+    url: 'https://fontstruct.com/fontstructions/show/1951915',
+    license: 'CC BY-SA 3.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0/',
+  },
+} as const
+
 /** 도트 이미지 원본 크기(px). 화면에서는 정수 배율로만 키운다 */
 export const spriteSize = {
   tree: { width: 150, height: 180 },
