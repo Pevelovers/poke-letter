@@ -77,7 +77,6 @@
   --color-scene-sky-day: var(--scene-sky-day);
   --color-scene-sky-night: var(--scene-sky-night);
   --color-scene-snow: var(--scene-snow);
-  --color-scene-tree: var(--scene-tree);
   --color-brand-kakao: var(--brand-kakao);
   --color-brand-kakao-foreground: var(--brand-kakao-foreground);
   --color-brand-naver: var(--brand-naver);
@@ -136,7 +135,6 @@
   --scene-sky-day: oklch(0.82 0.08 230);
   --scene-sky-night: oklch(0.25 0.07 270);
   --scene-snow: oklch(0.97 0.01 240);
-  --scene-tree: oklch(0.45 0.11 155);
 
   /* 로그인 버튼: 각 제공자의 브랜드 가이드 색 */
   --brand-kakao: #fee500;
@@ -202,5 +200,22 @@
   /* 도트 이미지는 정수 배율로만 키우고 픽셀이 번지지 않게 한다 (design.md §1) */
   .pixelated {
     image-rendering: pixelated;
+  }
+  /* 트리 눈 애니메이션: 가로 스프라이트시트를 프레임 단위로 넘긴다 (TreeScene, #41) */
+  .tree-sprite {
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    animation: tree-snow var(--tree-snow-duration) steps(var(--tree-frames)) infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .tree-sprite {
+      animation: none;
+    }
+  }
+}
+
+@keyframes tree-snow {
+  to {
+    background-position-x: var(--tree-sheet-end);
   }
 }
