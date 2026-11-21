@@ -1,0 +1,17 @@
+# 프론트엔드 미리보기 배포 (Netlify). 백엔드 없이 목 API로 동작한다 (#47)
+[build]
+  base = "frontend"
+  command = "pnpm build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+  # 백엔드가 없으므로 브라우저 안의 목 API를 쓴다 (frontend/src/config/app.ts)
+  VITE_API_MOCK = "true"
+
+# SPA: /me, /t/:treeId 같은 경로를 새로고침해도 index.html을 돌려준다.
+# 실제 파일(/editor/index.html, /art/... 등)이 있으면 그 파일이 먼저 나간다
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
