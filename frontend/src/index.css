@@ -8,9 +8,10 @@
 /*
  * 글꼴은 두 가지로 나눈다. 분류를 바꿀 때는 아래 --font-game, --font-sans와
  * @layer base의 규칙만 고친다.
- * - 게임 문구 (font-game): 서비스 이름, 화면 제목, 주요 버튼, 확인 창, D-day 배지.
- *   도트 글꼴이라 16px 이상에서만 쓴다
- * - 일반 문구 (font-sans, 기본값): 설명, 라벨, 입력값, 안내, 작은 글씨 전부
+ * - 게임 문구 (font-game, 기본값): 고지·약관을 뺀 모든 글. Pokemon DPPt에 없는 글자만
+ *   원스토어 모바일POP체로 대신 보인다
+ * - 고지·약관 (font-sans): 하단 비공식 고지, 개인정보 처리방침·약관 동의 문구.
+ *   읽기 쉬워야 하므로 해당 요소에 font-sans를 붙인다
  */
 
 /*
@@ -189,7 +190,7 @@
     @apply bg-background text-foreground;
   }
   html {
-    @apply font-sans;
+    @apply font-game;
   }
   /* 화면 제목과 대화상자 제목은 게임 문구다 */
   h1,
