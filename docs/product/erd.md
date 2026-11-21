@@ -1,7 +1,8 @@
 # ERD
 
-> 버전 1.1 · 2026-11-20 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
+> 버전 1.2 · 2026-11-20 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
 > 2026-11-20 개정 (#38): 숨김 랜덤을 없애고 선택기의 랜덤 선택 버튼으로 바꿈, 선택 확인 창, 이로치 2%, 공개 전 이로치 볼 반짝임, 공개 후 트리에 포켓몬 표시
+> 2026-11-20 개정 (#44): 키우미집 컨셉. 메시지와 함께 포켓몬을 고르는 것은 트리 주인에게 맡기는 것이고, 트리 주인은 트리 주변에 함께 지낼 포켓몬을 최대 6마리 배치한다 (걸어 다님, 이로치 2%)
 > 근거: [기능 정의서](features.md), [정책 정의서](policies.md) · DBMS: **MySQL 8.0.16 이상** (운영은 배포 인프라 제공, 로컬·테스트는 MySQL 8.4 LTS). 2026-11-19 PostgreSQL에서 전환 (#33)
 
 ## 다이어그램
@@ -12,6 +13,8 @@ erDiagram
     trees ||--o{ messages : "receives"
     characters ||--o{ messages : "gifted as"
     balls ||--o{ messages : "decorated with"
+    trees ||--o{ tree_companions : "lives with (최대 6)"
+    characters ||--o{ tree_companions : "placed as"
 
     users {
         bigint id PK
@@ -34,6 +37,14 @@ erDiagram
         int character_id FK
         boolean shiny "이로치 당첨"
         int ball_id FK
+        datetime created_at "UTC"
+    }
+    tree_companions {
+        bigint id PK
+        bigint tree_id FK
+        smallint slot "1~6"
+        int character_id FK
+        boolean shiny "이로치 당첨"
         datetime created_at "UTC"
     }
     characters {
@@ -105,6 +116,21 @@ erDiagram
 - MySQL `utf8mb4`의 `varchar(n)`은 글자 수 기준이라 한글·이모지 길이 제한과 맞는다. 앱에서도 같은 기준으로 검증한다
 - MySQL 기본 콜레이션(`utf8mb4_0900_ai_ci`)은 대소문자를 구분하지 않는다. 대소문자가 다른 값을 구분해야 하는 컬럼(공유 ID, 제공자 고유 ID, 볼 아이템 키)은 `utf8mb4_bin`으로 둔다
 - 길이 초과는 MySQL `STRICT` 모드에서만 오류가 난다(아니면 잘려서 저장). 운영 DB의 `sql_mode`와 상관없이 앱에서 먼저 검증한다
+
+### tree_companions — 트리 주인이 배치한 포켓몬 (함께 지내는 포켓몬)
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | `bigint` | PK, AUTO_INCREMENT | |
+| tree_id | `bigint` | NOT NULL, FK → trees.id ON DELETE CASCADE | 탈퇴 시 함께 삭제 (POL-PRV-03) |
+| slot | `smallint` | NOT NULL, CHECK 1~6 | 칸 번호. 화면에서 걸어 다니기 시작하는 순서에만 쓴다 (POL-CMP-01) |
+| character_id | `integer` | NOT NULL, FK → characters.id | 메시지와 같은 캐릭터 팩의 행 |
+| shiny | `boolean` | NOT NULL, default `false` | 이로치 당첨 (POL-CMP-03). FE가 뽑아 보낸다 |
+| created_at | `datetime(6)` | NOT NULL, default `CURRENT_TIMESTAMP(6)`, UTC | |
+
+- UNIQUE (`tree_id`, `slot`) — 트리당 최대 6행
+- 저장은 트리의 행을 모두 지우고 새로 넣는다(한 트랜잭션). 6칸 전체를 한 번에 바꾸는 정책(POL-CMP-05)과 맞추고, 칸 이동·빈칸 처리를 단순하게 하기 위해서다
+- 같은 `character_id`가 여러 칸에 들어갈 수 있다
 
 ### characters — 캐릭터 팩 (포켓몬)
 
@@ -182,10 +208,12 @@ GROUP BY character_id, shiny ORDER BY first_received;
 |---|---|
 | `V1__create_users_trees_characters_messages.sql` | 위 5개 테이블(users, trees, characters, balls, messages), 제약, 인덱스 |
 | `V2__add_shiny_drop_selection_type.sql` | `characters.shiny_image_url` 추가, `messages.shiny` 추가, `messages.selection_type`과 그 CHECK 삭제 (#38) |
+| `V3__create_tree_companions.sql` | `tree_companions` 테이블, UNIQUE (`tree_id`, `slot`), CHECK (`slot` 1~6) (#44) |
 | (시드) `scripts/seed-characters` | PokéAPI → characters, balls. 배포 환경에서 1회 실행, 다시 실행해도 같은 결과(idempotent). 세대는 `pokemon-form` → `version_group` → `generation`, 타입은 `pokemon.types`에서 받는다 (POL-CHR-07) |
 
 ## 용량 추정
 
 - 메시지 1행 ≈ 최대 2 KB (내용 500자 × 한글 UTF-8 3바이트 + 나머지 컬럼과 인덱스)
 - 트리당 최대 200개(A-08) → 트리 하나에 최대 약 0.4 MB
+- 함께 지내는 포켓몬은 트리당 최대 6행, 1행 수십 바이트라 용량에 거의 영향이 없다
 - 500 MB 기준으로 꽉 찬 트리 약 1,200개 분량이다. 실제로는 대부분 트리가 훨씬 적게 받을 것으로 보지만, **사용자 수는 추정 근거가 없다**

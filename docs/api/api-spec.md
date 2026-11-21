@@ -1,7 +1,8 @@
 # API 명세
 
-> 버전 1.1 · 2026-11-20 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
+> 버전 1.2 · 2026-11-20 · 상태: **확정** (구현 중 바뀌는 내용은 새 버전으로 기록)
 > 2026-11-20 개정 (#38, BE 구현 전이라 하위 호환 없이 바꿈): 숨김 랜덤을 없애고 선택기의 랜덤 선택 버튼으로 바꿈, 선택 확인 창, 이로치 2%, 공개 전 이로치 볼 반짝임, 공개 후 트리에 포켓몬 표시
+> 2026-11-20 개정 (#44): 키우미집 컨셉. 메시지와 함께 포켓몬을 고르는 것은 트리 주인에게 맡기는 것이고, 트리 주인은 트리 주변에 함께 지낼 포켓몬을 최대 6마리 배치한다 (걸어 다님, 이로치 2%) (BE 구현 전, 필드 추가와 새 엔드포인트라 하위 호환)
 > 근거: [기능 정의서](../product/features.md), [정책 정의서](../product/policies.md), [ERD](../product/erd.md)
 > 구현 후에는 springdoc이 만드는 OpenAPI(`/v3/api-docs`)가 단일 출처가 되고, FE 타입은 `pnpm api:generate`로 생성한다. 이 문서는 구현 전 합의용 계약이다.
 
@@ -149,6 +150,9 @@ OAuth 앱 등록 결과 (2026-11-18)
   "decorations": [
     { "messageId": 101, "nickname": "피카츄친구", "ball": { "ballId": 4, "name": "몬스터볼", "imageUrl": "https://..." }, "shiny": true, "character": null, "createdAt": "2026-12-02T21:14:00+09:00" }
   ],
+  "companions": [
+    { "slot": 1, "shiny": false, "character": { "characterId": 2500, "name": "피카츄", "imageUrl": "https://..." } }
+  ],
   "page": { "number": 0, "size": 10, "totalPages": 3 }
 }
 ```
@@ -157,7 +161,26 @@ OAuth 앱 등록 결과 (2026-11-18)
 - `shiny`: 이로치 당첨 여부. 공개 전에도 내려준다. FE는 공개 전 이로치 볼에 반짝임을 표시한다 (POL-CHR-12)
 - `isOwner`: 로그인한 주인이면 `true` → FE가 삭제·개봉 버튼을 보여 준다
 - `full`: 메시지가 최대치(200개)면 `true` → FE가 "메시지 남기기" 버튼을 숨긴다 (F-TRE-09)
+- `companions`: 트리 주인이 배치한 포켓몬 0~6개, `slot` 오름차순 (POL-CMP). **공개 전에도, 누구나 받는다** (POL-CMP-04). 페이지와 상관없이 항상 전체를 준다. 이로치면 `character.imageUrl`이 이로치 이미지다
 - `ball`: 장식으로 달린 볼. 작성자가 고른 것이라 공개 전에도 보여 준다 (POL-CHR-10). 대체 팩이면 일반 크리스마스 볼로 바꿔 돌려준다 (POL-IP-02)
+
+### `PUT /trees/{treeId}/companions` — 함께 지낼 포켓몬 저장 (트리 주인, CSRF)
+
+6칸 전체를 한 번에 바꾼다 (POL-CMP-05). 배열 순서가 칸 번호(1부터)다. 빈 배열이면 모두 뺀다.
+
+요청
+```json
+{ "companions": [ { "characterId": 2500, "shiny": false }, { "characterId": 13300, "shiny": true } ] }
+```
+응답 `200 OK` — 저장된 목록 (`GET /trees/{treeId}`의 `companions`와 같은 형태)
+```json
+{ "companions": [ { "slot": 1, "shiny": false, "character": { "characterId": 2500, "name": "피카츄", "imageUrl": "https://..." } } ] }
+```
+- `companions`: 0~6개. 7개 이상이면 `400 INVALID_INPUT` (POL-CMP-01)
+- `characterId`: 필수. 활성 캐릭터가 아니면 `404 CHARACTER_NOT_FOUND` (메시지 작성과 같다). 같은 포켓몬을 여러 칸에 넣을 수 있다
+- `shiny`: FE가 확인 창에서 뽑은 이로치 결과 (POL-CMP-03). 서버는 검증하지 않는다
+- 트리 주인이 아니면 `403 FORBIDDEN`, 트리가 없으면 `404 TREE_NOT_FOUND`
+- 공개 전후 상관없이 언제든 저장할 수 있다
 
 ### `GET /t/{treeId}` — 공유 링크 HTML (누구나, `/api` 밖)
 
@@ -316,6 +339,7 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 | `POST /auth/logout`, `DELETE /me` | | ✓ | | |
 | `POST /trees` | | ✓ | | |
 | `GET /trees/{id}` | ✓ | | | |
+| `PUT /trees/{id}/companions` | | | ✓ | |
 | `POST /trees/{id}/messages` | ✓ | | | |
 | `GET /trees/{id}/messages`, `.../{messageId}` | | | ✓ | ✓ |
 | `DELETE /trees/{id}/messages/{messageId}` | | | ✓ | |
@@ -328,6 +352,7 @@ JSON API가 아니다. 리버스 프록시가 `/t/*` 요청을 백엔드로 넘�
 ## 보안 구현 메모
 
 - `SecurityConfig`: `/api/v1/config`, `GET /api/v1/trees/*`, `POST /api/v1/trees/*/messages`, `GET /api/v1/characters`, `GET /api/v1/balls`, `GET /t/*`, OAuth 경로, 헬스 체크만 `permitAll`. 나머지는 인증 필요
+- `PUT /api/v1/trees/*/companions`는 인증과 CSRF가 필요하다
 - 트리 주인 확인은 컨트롤러가 아니라 서비스 계층에서 `tree.owner_id == 로그인 사용자`로 한다
 - 공개 여부 확인(`now >= revealAt`)도 서비스 계층에서 하고, 테스트에서 시각을 바꿀 수 있도록 `Clock`을 주입한다
 - 현재 `SecurityConfig`는 CSRF를 끈 상태다(개발 환경 세팅 시점). 세션 쿠키 인증을 도입할 때 CSRF를 켜고, 익명 메시지 작성 경로만 예외로 둔다
